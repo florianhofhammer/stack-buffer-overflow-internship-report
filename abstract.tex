@@ -1,0 +1,22 @@
+\newenvironment{abstractpage}
+  {\cleardoublepage\thispagestyle{empty}\chapter*{\abstractname}}
+  {\cleardoublepage}
+\renewenvironment{abstract}[1]
+  {\bigskip\begin{otherlanguage}{#1}%
+   \begin{center}\bfseries\abstractname\end{center}\noindent}
+  {\end{otherlanguage}\par\bigskip}
+
+\begin{abstractpage}
+  \begin{abstract}{english}
+    English
+  \end{abstract}
+  \vspace{2em}
+  \begin{abstract}{french}
+    Résumé français
+  \end{abstract}
+\end{abstractpage}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "Report"
+%%% End:

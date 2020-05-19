@@ -1,0 +1,74 @@
+% Contains placeholder stuff
+
+\chapter{Einleitung}
+\label{chp:Einleitung}
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. \cite{Konak2006,Sailer2013}
+
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.
+ 
+ 
+ \chapter{Hauptteil}
+ \label{sec:Hauptteil}
+ 
+ Abbildungen können im Unterverzeichnis \texttt{figures} abgelegt werden.
+ Eingebunden werden Sie mit dem Befehl \texttt{\textbackslash includegraphics} innerhalb
+ einer \texttt{figure}-Umgebung:
+ \begin{figure}[htb]
+ 	\centering
+ 	\includegraphics[width=0.8\textwidth]{figures/Hummingbird.jpg}
+ 	\caption{Eine Veilchenkopfelfe (auch Costakolibri genannt, vom lateinischen Calypte costae), die zur Familie der Kolibris gehört \cite{Kolibri}}
+ 	\label{fig:kolibri}
+ \end{figure}
+ 
+ \section{Erste Zwischenüberschrift}
+ \label{sec:ErsteZwischenueberschrift}
+ Die Arbeit kann auch Tabellen im \texttt{table}-Environment enthalten:
+ \begin{table}[ht]
+ 	\centering
+ 	\caption{Entfernungstabelle Süddeutschland, vgl. \cite{entfernungstabelle}}
+ 	\begin{tabular}{c r r r}
+ 		\toprule
+ 		& Augsburg & München & Stuttgart \\
+ 		\midrule
+ 		Augsburg  & -        & 61      & 149       \\
+ 		München   & 61       & -       & 210       \\
+ 		Stuttgart & 149      & 210     & -         \\
+ 		\bottomrule
+ 	\end{tabular}
+ 	\label{tab:entfernungen}
+ \end{table}
+ 
+ \subsection{Erste Unterüberschrift}
+ \label{sec:ErsteUnterueberschrift}
+ 
+ Das \texttt{listings}-Paket erlaubt es, Quellcode mit Syntax-Highlighting einzubinden:
+ 
+ \begin{lstlisting}[language=Python,float=ht,caption={Python-Programm zur Berechnung der Fakultätsfunktion}]
+ def fact(n):
+ """Return the n-th factorial number"""
+ if n == 0:
+ return 1
+ else:
+ return n * fact(n-1)
+ 
+ # Test output
+ print fact(10)
+ print "Done"
+ \end{lstlisting}
+ \label{lst:factorial}  
+ 
+ \section{Zweite Zwischenüberschrift}
+ \label{sec:ZweiteZwischenueberschrift}
+ 
+ TEXT
+ 
+ \chapter{Schluss}
+ \label{chp:Schluss}
+ 
+ TEXT
+ 
+ %%% Local Variables:
+ %%% mode: latex
+ %%% TeX-master: "../Abschlussarbeit"
+ %%% End:
+ 

@@ -1,0 +1,33 @@
+\input{preamble}
+
+\begin{document}
+% Titelei
+\include{titlepage}
+\include{abstract}
+\tableofcontents
+\listoffigures
+\listoftables
+\printglossaries
+
+\include{glossary}
+
+% Hauptinhalt der Arbeit
+\include{chapters/01-introduction}
+\include{chapters/structure}
+%\include{chapters/legacy}
+
+% Anhang
+%\include{appendix}
+
+% Literaturverzeichnis
+\printbibliography[heading=bibintoc]
+
+% Eidesstattliche Erklärung
+\include{honesty}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

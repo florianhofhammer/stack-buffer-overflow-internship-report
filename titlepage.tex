@@ -1,0 +1,64 @@
+%% Cover/title page
+\begin{titlepage}
+  \onehalfspacing
+  \makeatletter
+  \vspace*{1em}
+  \begin{center}
+    {\LARGE\textsc{École Polytechnique}}\\[0.2em]
+    {\Large Institut Polytechnique de Paris}
+
+    \par\vspace{3em}
+    {\usekomafont{subject}%
+      \@subject\\
+      for the \@course \space internship\par
+      in the \@degree \space program
+    }
+
+    \vfill
+    {\usekomafont{title}\@title}
+    \ifdefempty{\@subtitle}{}{%
+      \par\vspace{.5em}
+      {\usekomafont{subtitle}\@subtitle}
+    }
+    
+    \par\vspace{2em}
+    {\usekomafont{author}\@author}
+  \end{center}
+  \makeatother
+
+  \vfill
+  \centering
+  \includegraphics[height=100mm]{figures/Ecole_polytechnique_signature}\\*[2em]
+  \includegraphics[width=.3\paperwidth]{figures/inr_logo_rouge_rvb}
+  \hspace*{2em}
+  \includegraphics[width=.3\paperwidth]{figures/NewlogoI3S}\\[-5em]
+\end{titlepage}
+
+%% \GetTranslation{matrno}: \@matrno\par
+
+%% Credits
+\makeatletter
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\noindent\@author\\[0.2em]
+\noindent\textbf{\@title}
+
+\begin{tabbing}
+  This is just a placeholder \= Here comes the content \kill
+  \GetTranslationFor{english}{coordinator}: \> \textbf{\@coordinator@name},\\
+  \> \@coordinator@firstaffiliation\\
+  \> \@coordinator@secondaffiliation\\[2mm]
+  \GetTranslationFor{english}{director}: \> \textbf{\@director@name},\\
+  \> \@director@firstaffiliation\\
+  \> \@director@secondaffiliation\\[2mm]
+%  \GetTranslationFor{english}{matrno}: \> \@matrno\\[2mm]
+%  \GetTranslationFor{english}{duedate}: \> \@date
+  \GetTranslationFor{english}{dates}: \> \dates
+\end{tabbing}
+\makeatother
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "Report"
+%%% End:
