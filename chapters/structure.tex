@@ -7,8 +7,25 @@
 \chapter{Defense mechanisms}
 \label{chp:defense-mechanisms}
 
+\section{Compiler optimizations}
+\label{sec:compiler-optimizations}
+
+\begin{itemize}
+	\item{
+		\texttt{\_FORTIFY\_SOURCE} is enabled by compiler optimizations $\Rightarrow$ dangerous functions replaced by wrappers which check for overflows
+	}
+	\item{
+		\texttt{ebp} mostly not used as frame base pointer register but as standard register $\Rightarrow$ other stack layout
+	}
+\end{itemize}
+
 \section{Data Execution Prevention}
 \label{sec:dep}
+
+\begin{itemize}
+	\item{NX bit}
+	\item{W $ \oplus $ X page permissions}
+\end{itemize}
 
 \section{Function Pointer Protection}
 \label{sec:fpp}
@@ -19,6 +36,11 @@
 \subsection{Current implementation}
 \label{subsec:aslr-current}
 
+\begin{itemize}
+	\item{Randomized on program startup}
+	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
+\end{itemize}
+
 \subsection{Improvement possibilities}
 \label{subsec:aslr-improvement}
 
@@ -28,11 +50,21 @@
 \subsection{Current implementation}
 \label{subsec:canaries-current}
 
+\begin{itemize}
+	\item{Random canary created on program startup}
+	\item{Same canary for all functions $\Rightarrow$ canary disclosure in one function makes all other functions vulnerable}
+	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
+\end{itemize}
+
 \subsection{Improvement possibilities}
-\label{śubsec:canaries-improvement}
+\label{subsec:canaries-improvement}
 
 \section{Control Flow Integrity}
 \label{sec:cfi}
+
+\begin{itemize}
+	\item{Intel CET $\Rightarrow$ shadow stack, branch validation}
+\end{itemize}
 
 % Depending on time left
 \chapter{OS assessment}
