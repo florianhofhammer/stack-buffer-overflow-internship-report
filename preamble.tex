@@ -109,23 +109,29 @@ urlcolor=smdsblue,      % URL color
 % ----------------------------------------------------
 % Code listings
 % ----------------------------------------------------
+\definecolor{commentgreen}{rgb}{0,0.6,0}
+\definecolor{stringmauve}{rgb}{0.58,0,0.82}
+
 \usepackage{listings}
+\renewcommand*{\lstlistlistingname}{List of Listings}
 \lstset{%
   frame=single,                             % Add a single line frame around listings
-  frameround=ftft,                          % Rounded frame corners on top left and bottom right
-  backgroundcolor=\color{gray!5},           % Slight gray shade for listings
+  breaklines=true,							% Automatic line breaks
+  backgroundcolor=\color{gray!3},           % Slight gray shade for listings
   rulecolor=\color{black!30},               % Gray frame outline
-  xleftmargin=.125\textwidth,               % Extra left margin
-  xrightmargin=.125\textwidth,              % Extra right margin
-  basicstyle=\small\ttfamily,               % General font style for listings
-  keywordstyle=\bfseries,                   % Font style for keywords
-  commentstyle=\color{gray},                % Font style for comments
-  stringstyle={},                           % Font style for string literals
+  xleftmargin=.1\textwidth,                 % Extra left margin
+  xrightmargin=.1\textwidth,                % Extra right margin
+  basicstyle=\footnotesize\ttfamily,        % General font style for listings
+  keywordstyle=\bfseries\color{blue},       % Font style for keywords
+  commentstyle=\color{commentgreen},        % Font style for comments
+  stringstyle=\color{stringmauve},          % Font style for string literals
   numbers=left,                             % Show line numbers
   stepnumber=1,                             % Step increments for line numbers
   numberstyle={\sffamily\tiny\color{gray}}, % Font style for line numbers
   numbersep=2em,                            % Space between line numbers and code
+%  captionpos=b,								% Caption below listing
 }
+
 
 % ----------------------------------------------------
 % Bibliography management
@@ -136,6 +142,7 @@ natbib=true,        % Provide natbib-compatible citation commands
 sorting=none,       % Sort citations by occurrence in the document
 style=numeric-comp, % Use compressed numeric citations, e.g. [1-3; 5]
 block=space,        % Add a little spacing inside bibliography entries
+%sorting=nty,		% Sort after name, title, year
 ]{biblatex}
 \addbibresource{literature.bib}
 
@@ -191,6 +198,10 @@ block=space,        % Add a little spacing inside bibliography entries
 % landscape pages
 %\usepackage{lscape}
 
+% subfigures
+\usepackage{caption}
+\usepackage{subcaption}
+
 % improvements to math mode
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -210,7 +221,7 @@ block=space,        % Add a little spacing inside bibliography entries
 
 % Intelligent cross-referencing
 % Note: Must be loaded at end of preamble (esp. after hyperref)
-\usepackage{cleveref}
+\usepackage[nameinlink,noabbrev]{cleveref}
 
 % don't reset footnote numbering for every chapter
 \counterwithout{footnote}{chapter}

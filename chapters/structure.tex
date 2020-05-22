@@ -1,21 +1,18 @@
-\chapter{Background}
-\label{chp:background}
-
 \chapter{Attack vectors}
 \label{chp:attack-vectors}
 
 \chapter{Defense mechanisms}
 \label{chp:defense-mechanisms}
 
-\section{Compiler optimizations}
-\label{sec:compiler-optimizations}
+\section{Compiler-based measures}
+\label{sec:compiler-based-measures}
 
 \begin{itemize}
 	\item{
 		\texttt{\_FORTIFY\_SOURCE} is enabled by compiler optimizations $\Rightarrow$ dangerous functions replaced by wrappers which check for overflows
 	}
 	\item{
-		\texttt{ebp} mostly not used as frame base pointer register but as standard register $\Rightarrow$ other stack layout
+		\texttt{ebp} mostly not used as frame base pointer register but as standard register when optimizations are enabled $\Rightarrow$ other stack layout
 	}
 \end{itemize}
 

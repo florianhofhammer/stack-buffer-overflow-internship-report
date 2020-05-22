@@ -17,9 +17,9 @@ The version of \gls{glibc} is 2.31%
 \gls{gcc} is used in in the latest 9.x line version 9.3.0.
 
 At the time of writing this report, newer stable releases of the Linux kernel and \gls{gcc} are already available (5.6.14 for the Linux kernel \cite{LKO2020a}, 10.1 for \gls{gcc} \cite{FSF2020}).
-\todo{Look up whether the referenced parts changed at all or if everything's still valid for the new versions}
+%\todo{Look up whether the referenced parts changed at all or if everything's still valid for the new versions}
 However, this does not impose any problems on the real-world consequences of this report's contents.
-The newest editions of popular Linux distributions for x86\_64/amd64 processor architectures like Red Hat Enterprise Linux (version 8.2), Ubuntu (version 20.04 \gls{lts}), Debian (version 10.4) are based on the Linux 5.4.0 \gls{lts} kernel or even older versions%
+The newest editions of popular Linux distributions for \texttt{x86\_64}/\texttt{amd64} processor architectures like Red Hat Enterprise Linux (version 8.2), Ubuntu (version 20.04 \gls{lts}), Debian (version 10.4) are based on the Linux 5.4.0 \gls{lts} kernel or even older versions%
 	\footnote{See also discussion on \href{https://www.reddit.com/r/webhosting/comments/beg0z0/should_i_use_an_lts_version_of_ubuntu_for_my_web/}{reddit.com} on whether to use \gls{lts} versions for production server deployment}
 \cite{RedHat2020,Canonical2020,SPI2020,SPI2020a}.
 Also, the highest kernel version used for development of the Android mobile \gls{os}, which has a market share of about 70\% \cite{Statcounter2020}, is Linux 5.4 LTS \cite{GoogleLLC2020}.
@@ -28,3 +28,6 @@ Thus, it is safe to assume that the majority of devices running Linux kernels or
 A similar observation can be made for \gls{gcc} version 9.3.0.
 The aforementioned Linux distributions all by default ship the \gls{gcc} package in version 9.3.0 or below \cite{RedHat2020a,Canonical2020a,SPI2020b}.
 It an therefore be safely assumed that \gls{gcc} version 9.3.0 is still very widespread and in frequent use.
+
+If not otherwise stated, the following chapters and sections are referring to a 64 bit (\texttt{x86\_64} or \texttt{amd64} architecture) \acrshort{gnu}/Linux system with the aforementioned software versions.
+In addition, a memory layout equivalent to the memory layout for C programs as described in \cref{sec:process-memory} should be assumed.
