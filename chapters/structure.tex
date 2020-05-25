@@ -1,6 +1,3 @@
-\chapter{Attack vectors}
-\label{chp:attack-vectors}
-
 \chapter{Defense mechanisms}
 \label{chp:defense-mechanisms}
 
@@ -63,6 +60,23 @@
 	\item{Intel CET $\Rightarrow$ shadow stack, branch validation}
 \end{itemize}
 
-% Depending on time left
+% Depending on time left!
 \chapter{OS assessment}
 \label{chp:os-assessment}
+
+\begin{itemize}
+	\item{Scan different Linux distributions' /bin directory for insecure applications}
+	\item{Example: \texttt{snapctl} on Ubuntu 20.04: no stack canaries, no position independent executable, no \gls{relro}}
+\end{itemize}
+%
+
+\chapter{Related work and further reading}
+\label{chp:related-work}
+
+\begin{itemize}
+	\item{Heap overflows}
+	\item{String format vulnerability}
+\end{itemize}
+
+\chapter{Conclusion}
+\label{chp:conclusion}

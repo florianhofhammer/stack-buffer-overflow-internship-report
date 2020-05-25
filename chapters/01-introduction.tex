@@ -1,6 +1,8 @@
 \chapter{Introduction}
 \label{chp:introduction}
 
+\todo[inline]{Basic introduction here}
+
 \section{Basic vocabulary}
 As this report is about stack buffer overflows, it is important to know what this wording means.
 The \emph{stack} is a data structure used in modern \gls{os} memory management and is explained in \cref{sec:process-memory,sec:stack-setup-and-usage}.
@@ -27,7 +29,7 @@ The version of \gls{glibc} is 2.31%
 At the time of writing this report, newer stable releases of the Linux kernel and \gls{gcc} are already available (5.6.14 for the Linux kernel \cite{LKO2020a}, 10.1 for \gls{gcc} \cite{FSF2020}).
 %\todo{Look up whether the referenced parts changed at all or if everything's still valid for the new versions}
 However, this does not impose any problems on the real-world consequences of this report's contents.
-The newest editions of popular Linux distributions for \texttt{x86\_64}/\texttt{amd64} processor architectures like Red Hat Enterprise Linux (version 8.2), Ubuntu (version 20.04 \gls{lts}), Debian (version 10.4) are based on the Linux 5.4.0 \gls{lts} kernel or even older versions%
+The newest editions of popular Linux distributions for \texttt{x86\_64/amd64} processor architectures like Red Hat Enterprise Linux (version 8.2), Ubuntu (version 20.04 \gls{lts}), Debian (version 10.4) are based on the Linux 5.4.0 \gls{lts} kernel or even older versions%
 	\footnote{See also discussion on \href{https://www.reddit.com/r/webhosting/comments/beg0z0/should_i_use_an_lts_version_of_ubuntu_for_my_web/}{reddit.com} on whether to use \gls{lts} versions for production server deployment}
 \cite{RedHat2020,Canonical2020,SPI2020,SPI2020a}.
 Also, the highest kernel version used for development of the Android mobile \gls{os}, which has a market share of about 70\% \cite{Statcounter2020}, is Linux 5.4 LTS \cite{GoogleLLC2020}.
@@ -41,3 +43,5 @@ If not otherwise stated, the following chapters and sections are referring to a 
 Thus, if referring to processor registers, by default the corresponding 64 bit register names (starting with the letter \texttt{r} instead of \texttt{e} on 32 bit \texttt{x86} architecture, for example \texttt{rsp} instead of \texttt{esp}) are used.
 The 32 bit register names are only used if explicitly referring to 32 bit code.
 In addition, a memory layout equivalent to the memory layout for C programs as described in \cref{sec:process-memory} should be assumed.
+
+The terms \texttt{x86} and \texttt{i386} for 32 bit processor architectures and \texttt{x86\_64} and \texttt{amd64} for 64 bit processor architectures are used synonymously throughout this report.
