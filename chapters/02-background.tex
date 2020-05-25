@@ -34,7 +34,7 @@ The contents of the buffer are then stored on the heap.
 
 The stack on the other hand contains data with fixed size.
 In the example of \cref{lst:memory-layout}, sizes of variables like \texttt{int max\_len} or \texttt{char *input} are known at compile-time.
-Thus, they can be stored on the stack by increasing the stack by a fixed size when program flow enters the corresponding function.
+Thus, they can be stored on the stack by increasing the stack size by a fixed size when program flow enters the corresponding function.
 It has to be noted here that even though the contents of the \texttt{input} buffer are stored in the heap, the pointer to those contents is stored on the stack.
 
 The mapped memory is a region where files from the computers file system are mapped to directly address those files' contents just like other any other memory contents like variables or program instructions.
@@ -47,18 +47,27 @@ The main usage for this feature is to map libraries into memory, for example \gl
 \label{sec:stack-setup-and-usage}
 
 As shown in \cref{sec:process-memory}, the stack can contain program data with a size already known at compile time.
+It is a data structure behaving according to the \gls{lifo} principle meaning that the data on top of the stack is the data that was put on the stack last and will be removed from the stack first.
 When a function is entered, the stack size is increased by the accumulative size of the function's variables by decrementing the stack pointer by this size.
+This is also known as ``pushing a stack frame onto the stack'' where \emph{stack frame} refers to the totality of a function's local data.
 The stack pointer is stored in the processor register \texttt{esp} (\texttt{x86}/\texttt{i386} architecture) or \texttt{rsp} (\texttt{x86\_64}/\texttt{amd64} architecture) and points to the top of the stack.
-On leaving the function, the stack size is decreased by the same amount of memory by incrementing the stack pointer.
+On leaving the function, the stack size is decreased by the same amount of memory by incrementing the stack pointer, also known as ``popping a stack frame from the stack''.
 This implies that variables declared in a function can only be safely accessed as long as the function is active.
-``Active'' here means that either control flow is currently inside this function or inside another function called by this function, maybe even recursively.
+\emph{Active} here means that either control flow is currently inside this function or inside another function called by this function, maybe even recursively.
 Otherwise, the memory where those variables reside was already freed by decreasing the stack size and any access to such variables yields nondeterministic behavior.
 
-When a function is called, not only its variables are stored on the stack but also the \gls{rip}.
+When a function is called, not only its variables are stored on the stack but also some control flow information like the \gls{rip}.
 The \gls{rip} points to the next instruction in the calling function which should be executed after the called function returns.
 This is exactly what the \texttt{call} and \texttt{ret} assembly instructions do.
 \texttt{call} pushes the address of the next instruction onto the stack and then enters the called function.
 In the called function, \texttt{ret} at the end of the function pops the saved address from the stack and continues execution at this address.
+
+Depending on the compiler configuration, there is also often a \gls{sfp} put on the stack which usually lies between the \gls{rip} and the called function's local data on the stack.
+Apart from the \texttt{esp/rsp} register, the \texttt{ebp/rbp} register can be used to address stack contents.
+At the start of a function, the current \texttt{ebp/rbp} register content is pushed onto the stack as the \gls{sfp} and the \texttt{esp/rsp} content is loaded into \texttt{ebp/rbp}.
+Throughout the function, this register's value does not change whereas the \texttt{esp/rsp} value can change through \texttt{push} or \texttt{pop} instructions as the stack pointer should always to the top of the stack.
+The static value of the \texttt{ebp/rbp} register thus allows to address a function's stack content by fixed offsets that don't change throughout the function's code and is often referred to as \emph{frame pointer}.
+On returning from a function, the \gls{sfp} is loaded into \texttt{ebp/rbp} to allow the caller function to use its static offsets into its own stack frame again when continuing its execution.
 
 Thus, the stack not only contains data but also important control flow information.
 
@@ -68,7 +77,7 @@ Thus, the stack not only contains data but also important control flow informati
 This mixture of data and control flow information is exactly where problems arise.
 
 Under the assumption that a function exists somewhere in a program as shown in \cref{lst:vulnerable-function}, the stack layout of such a function may look as shown in \cref{fig:stack-layout-without-data}.
-After the \gls{rip}, the compiler positions the \gls{sfp} (a pointer to the start of the previous stack frame) and the local variables in the order they were declared%
+After the \gls{rip}, the compiler by default usually positions the \gls{sfp} and the local variables in the order they were declared%
 	\footnote{
 		The layout as shown in \cref{fig:stack-layout} should just be seen as an example, as it can differ depending on compiler behavior or processor architecture (here: 32 bit architecture with stack alignment on 4 bytes, function arguments passed on the stack).
 	}%
@@ -117,9 +126,9 @@ Including the terminating \texttt{0x00} byte, this string copy operation thus ov
 	\label{fig:stack-layout}
 \end{figure}
 
-If an attacker can control the data which is copied onto the stack, they can carefully craft an input string so that they can overwrite the \gls{rip} with attacker-controlled data and thus control where the program tries to continue execution after it returns from the current function.
+If an attacker can control the data which is copied onto the stack, they can carefully craft an input string so that they can overwrite the \gls{sfp} or \gls{rip} with attacker-controlled data and thus control where the program tries to look for function-local data (overwritten \gls{sfp}) or to continue execution (overwritten \gls{rip}) after it returns from the current function.
 A stack buffer overflow always occurs if a buffer just like \texttt{c} in \cref{lst:vulnerable-function} is filled with more data than it can hold.
-This does not necessarily mean that the \gls{rip} is overwritten by a stack buffer overflow, but in most cases this is the goal of an attacker in order to divert control flow in the program's execution.
+This does not necessarily mean that the \gls{sfp} or \gls{rip} is overwritten by a stack buffer overflow, but in most cases this is the goal of an attacker in order to divert control flow in the program's execution or manipulate a function's data.
 
-How an attacker can divert control flow and what implications come with this possibility is explained in \cref{chp:attack-vectors}.
+How an attacker can divert control flow or manipulate data and what implications come with this possibility is explained in \cref{chp:attack-vectors}.
 

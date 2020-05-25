@@ -1,6 +1,14 @@
 \chapter{Introduction}
 \label{chp:introduction}
 
+\section{Basic vocabulary}
+As this report is about stack buffer overflows, it is important to know what this wording means.
+The \emph{stack} is a data structure used in modern \gls{os} memory management and is explained in \cref{sec:process-memory,sec:stack-setup-and-usage}.
+
+A \emph{buffer} generally is a ``limited, contiguously allocated set of memory'' \cite[12]{Anley2007}.
+In this report, we will often refer to C programming language's \texttt{char} arrays as buffers.
+Such arrays are fulfilling the above definition and are generally used to hold \gls{ascii} encoded text or arbitrary binary data, as a \texttt{char} in C refers to exactly one byte of data.
+
 \section{System model}
 \label{sec:system-model}
 
@@ -30,4 +38,6 @@ The aforementioned Linux distributions all by default ship the \gls{gcc} package
 It an therefore be safely assumed that \gls{gcc} version 9.3.0 is still very widespread and in frequent use.
 
 If not otherwise stated, the following chapters and sections are referring to a 64 bit (\texttt{x86\_64} or \texttt{amd64} architecture) \acrshort{gnu}/Linux system with the aforementioned software versions.
+Thus, if referring to processor registers, by default the corresponding 64 bit register names (starting with the letter \texttt{r} instead of \texttt{e} on 32 bit \texttt{x86} architecture, for example \texttt{rsp} instead of \texttt{esp}) are used.
+The 32 bit register names are only used if explicitly referring to 32 bit code.
 In addition, a memory layout equivalent to the memory layout for C programs as described in \cref{sec:process-memory} should be assumed.
