@@ -198,6 +198,13 @@ block=space,        % Add a little spacing inside bibliography entries
 % landscape pages
 %\usepackage{lscape}
 
+% resolve float warnings referring to the ToC
+\usepackage{tocbasic}
+\usepackage{scrhack}
+
+% bibliography numbering independent of ToC and lists (of figures, tables, listings)
+\usepackage{notoccite}
+
 % subfigures
 \usepackage{caption}
 \usepackage{subcaption}

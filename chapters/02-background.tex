@@ -85,8 +85,8 @@ After the \gls{rip}, the compiler by default usually positions the \gls{sfp} and
 
 \begin{lstlisting}[language=C,float=ht,caption={C function with buffer overflow vulnerability}, label={lst:vulnerable-function}]
 void copy(char *bar) {
-char c[12];
-strcpy(c, bar);
+    char c[12];
+    strcpy(c, bar);
 }
 \end{lstlisting}
 

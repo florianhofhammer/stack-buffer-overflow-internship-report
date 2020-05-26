@@ -1,0 +1,77 @@
+\chapter{Current defense mechanisms}
+\label{chp:current-defense-mechanisms}
+
+This chapter provides information about defense mechanisms trying to mitigate stack buffer overflow attacks as they are currently employed by the Linux kernel or the compiler.
+This refers to software versions as described in \cref{sec:system-model}.
+
+\Cref{chp:attack-vectors} then describes the actual attack possibilities that arise from a stack buffer overflow vulnerability and how such attack vectors can be rendered unusable or at least inefficient and hard to exploit.
+
+Additionally, some of the attacks described in \cref{chp:attack-vectors} can also be used to bypass some of the mitigation measures described in \hyperref[chp:current-defense-mechanisms]{this \namecref{chp:current-defense-mechanisms}}.
+Therefore, \cref{chp:defense-mechanism-improvements} provides different approaches on how to improve the defense mechanisms in order to prevent even more attacks.
+
+\section{Compiler-based measures}
+\label{sec:compiler-based-measures}
+
+\subsection{The \texttt{\_FORTIFY\_SOURCE} macro}
+\label{subsec:fortify-source}
+
+Support for the \texttt{\_FORTIFY\_SOURCE} macro was added to \gls{gcc} in \citedate{Jelinek2004} and is available since \gls{gcc} version 4.0 \cite{Sharma2014}.
+The possible values for this macro are 0, 1 and 2 with 0 meaning that it has no effect and 2 meaning that all measures that are implied by this macro are active.
+
+The effect of this macro is that the compiler checks at compile time as well as at run time whether a destination buffer is overflown by functions such as \texttt{strcpy}, \texttt{strncat}, \texttt{memcpy}, and so forth%
+	\footnote{Supported functions according to \cite{Kerrisk2020,Sharma2014}: \texttt{memcpy, mempcpy, memmove, memset, strcpy, stpcpy, strncpy, strcat, strncat, sprintf, vsprintf, snprintf, vsnprintf, gets}}%
+.
+In order to achieve this, the compiler checks at compile time whether the destination is big enough to hold the source's contents.
+This is done by comparing function arguments (e.g. the number of bytes to set in \texttt{memset}) or array sizes, if the source and destination arrays have fixed sizes.
+If the compiler detects an overflow, it issues a warning \cite{Jelinek2004,Kerrisk2020,Sharma2014,Sidhpurwala2018}.
+
+For dynamic sized operands where the compiler cannot determine whether the destination operand will be overflown, the function calls are replaced with wrapper functions that check the operands' sizes.
+For example, \texttt{strcpy} is replaced with \texttt{\_\_strcpy\_chk}.
+If the check fails, the program execution is aborted with an error message \cite{Kerrisk2020,Sharma2014}.
+
+The \texttt{\_FORTITY\_SOURCE} macro can either be manually set to a value higher than 0 or is automatically activated when compiler optimizations are enabled, for example by passing the \texttt{-O3} flag to \gls{gcc} \cite{Kerrisk2020,Sharma2014,Sidhpurwala2018}.
+\todo{Include example? Not sure}
+
+\citename{Jelinek2004} states in the announcement of the original implementation of this feature that the run time overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
+
+
+\begin{itemize}
+	\item{
+		\texttt{ebp} mostly not used as frame base pointer register but as standard register when optimizations are enabled $\Rightarrow$ other stack layout
+	}
+\end{itemize}
+
+\section{\glsentrylong{dep} (\glsentryshort{dep})}
+\label{sec:data-execution-prevention}
+
+\begin{itemize}
+	\item{NX bit}
+	\item{W $ \oplus $ X page permissions}
+\end{itemize}
+
+\section{Function Pointer Protection}
+\label{sec:function-pointer-protection}
+
+\section{\glsentrylong{aslr} (\glsentryshort{aslr})}
+\label{sec:address-space-layout-randomization}
+
+\begin{itemize}
+	\item{Randomized on program startup}
+	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
+\end{itemize}
+
+\section{Stack canaries}
+\label{sec:stack-canaries}
+
+\begin{itemize}
+	\item{Random canary created on program startup}
+	\item{Same canary for all functions $\Rightarrow$ canary disclosure in one function makes all other functions vulnerable}
+	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
+\end{itemize}
+
+\section{Control Flow Integrity}
+\label{sec:cfi}
+
+\begin{itemize}
+	\item{Intel CET $\Rightarrow$ shadow stack, branch validation}
+\end{itemize}

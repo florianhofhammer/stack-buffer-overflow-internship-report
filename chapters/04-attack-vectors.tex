@@ -2,7 +2,7 @@
 \label{chp:attack-vectors}
 
 In this chapter, we describe several methods to gain control over a program vulnerable to stack buffer overflow attacks.
-In each of the sections, it is assumed that none of the measures from \cref{chp:defense-mechanisms} are enabled or active unless otherwise stated.
+In each of the sections, it is assumed that none of the measures from \cref{chp:current-defense-mechanisms} are enabled or active unless otherwise stated.
 
 % Differentiate between RIP and SFP overwriting? 
 % If yes, in sections if applicable or in own section?
@@ -53,7 +53,7 @@ As shown in \cref{fig:stack-overflow-nop-sled}, such a \acrshort{nop} sled can e
 \begin{figure}[htb]
 	\centering
 	\includegraphics[width=0.3\textwidth]{figures/NopSled}
-	\caption{Stack layout after a stack buffer overflow with shellcode and \acrshort{nop} sled \cite{Lynn2007c} (c.f. \cref{fig:stack-layout})}
+	\caption{Stack layout after a stack buffer overflow with shellcode and \acrshort{nop} sled \cite{Lynn2007c} (cf. \cref{fig:stack-layout})}
 	\label{fig:stack-overflow-nop-sled}
 \end{figure}
 
@@ -64,7 +64,8 @@ In general, a long \acrshort{nop} sled is desired by an attacker, as it becomes 
 
 If it is desired to have a contiguous block of shellcode with maybe a \acrshort{nop} sled in front of it without the necessity of relative jumps, it might be a problem to have the exploit code fit into the vulnerable buffer before the overwritten return address, as the buffer might be too small to store the whole input.
 In such cases, the actual exploit code (\acrshort{nop} sled and shellcode) can be put into an environment variable on the system which is being attacked if the attacker has the necessary access to the system to set environment variables.
-Environment variables are not restricted in size and are loaded onto the bottom of the stack on program startup \cite[731\psq]{Bryant2011}.
+There are slight offsets depending on the contents of other environment variables, but an environment variable generally can be found at the same address in each started process, as environment variables are loaded at the bottom of the stack \cite[731\psq]{Bryant2011}.
+This allows to retrieve the location at which an environment variable will be located in the attacked process with the help of a second program (cf. \cref{lst:getenvaddress}).
 
 Thus, it is possible to point the return address into an environment variable instead of the overflown buffer.
 If the return address successfully points either directly to the shellcode or into the \acrshort{nop} sled inside the environment variable, the shellcode is executed exactly as in the previous case where it was put into the user-controlled overflown buffer.
@@ -75,29 +76,69 @@ Thus, shellcode cannot be injected into already running programs with the help o
 \subsubsection{Code injection into global variables}
 \label{subsubsec:ci-via-globals}
 
+If the shellcode is put into an environment variable, it is pretty easy to locate in memory as described above.
+If this is not possible because an attacker wants to target an already active process, the shellcode has to be written onto the stack.
+The difficulty of this approach is to find suitable addresses to point the \gls{rip} to when overflowing a vulnerable buffer, as stack addresses are highly volatile depending on the depth of the call stack and the functions' local variables.
+
+If there is the possibility to place data in a global buffer before overflowing the local buffer as shown in \cref{lst:local-global-buffer}, an attacker can also put the shellcode into the global buffer and overwrite the \gls{rip} by overflowing the local buffer so that it points into the global buffer.
+This greatly eases finding the target address in comparison to stack addresses, as global variables are located in the \texttt{.bss} (uninitialized global variables) or \texttt{.data} (initialized global variables) sections in an \gls{elf} executable and thus are loaded at specific memory locations as seen in \cref{lst:local-global-buffer-disassembly,fig:memory-layout}.
+In the given example, the global buffer is always located at the address \texttt{0x0000000000404080}.
+
+\lstinputlisting[language=C,float=ht,caption={C program reading data from \texttt{\acrshort{stdin}} into a global and a local buffer},label={lst:local-global-buffer}]{code/local-global-buffer.c}
+
+\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:local-global-buffer} with \texttt{gcc -o local-global-buffer local-global-buffer.c -no-pie}, retrieved with \texttt{objdump -D local-global-buffer}}, label={lst:local-global-buffer-disassembly}]
+        ...
+
+Disassembly of section .bss:
+
+0000000000404060 <completed.7393>:
+...
+
+0000000000404080 <global_buffer>:
+...
+\end{lstlisting}
+
 \subsubsection{Code injection into arbitrary buffers}
 \label{subsubsec:ci-into-arbitrary-buffer}
 
-\subsection{Countermeasures}
+Shellcode can also be read into any local buffer on the stack that is user-controlled before overflowing the vulnerable buffer.
+However, as already mentioned \hyperref[subsubsec:ci-via-globals]{above}, it can be difficult to locate such a buffer on the stack even when using a \acrshort{nop} sled.
+
+\subsection{Difficulties and countermeasures}
 \label{subsec:ci-countermeasures}
+
+Over the last 24 years since \citeauthor{AlephOne1996}'s article \citetitle{AlephOne1996} was published, several changes in processor architecture, such as the transition from 32 bit \texttt{x86} to 64 bit \texttt{x86\_64}, as well as lots of newly introduced mitigation techniques made it difficult or even impossible to inject code into a program's address space and execute such code.
+
+\subsubsection{64 bit addressing}
+\label{subsubsec:ci-64bit-addressing}
+
+With the transition from \texttt{x86} to \texttt{x86\_64}, the addresses changed from a length of 32 bits / 4 bytes to 64 bits / 8 bytes.
+However, the Linux kernel with the default 4-level page tables only uses 47 of the address bits for userspace virtual memory addresses and sets the upper 17 bits to zero.
+With 5-level page tables, 56 bits are utilized and the upper 8 bits are set to zero \cite{Kernel2020}.
+
+This fact implies that there is always at least one \texttt{0x00} byte in an address.
+As such a \texttt{0x00} byte also marks the end of a string, an attacker might not be able to write past such a byte if the overflow occurs in a string operation function, such as \texttt{strcpy} or \texttt{gets}.
+As the aforementioned processor architectures use little-endian byte addressing%
+	\footnote{least significant byte first in comparison to big-endian addressing with most significant byte first}%
+, the \texttt{0x00} bytes come last and thus probably don't impose any problems when overwriting the return address, as the upper bytes are already set to \texttt{0x00} because of the original return address also being a userspace virtual memory address. 
+However, usually a \gls{sfp} also has to be overwritten before even reaching the \gls{rip} (cf. \cref{fig:stack-layout}).
+Because of this pointer also being a userspace virtual memory address, it also has the upper bytes set to \texttt{0x00} and can cause problems when overflowing a buffer with string based functions.
+
+In an example as in \cref{lst:local-global-buffer}, this problem does not occur because \texttt{read} as a binary input function is used instead of string input functions.
+
+\subsubsection{\glsentrylong{dep} (\glsentryshort{dep})}
+\label{subsubsec:ci-data-execution-prevention}
+
 
 \begin{itemize}
 	\item{\gls{nx} bit}
 	\item{\gls{aslr}}
 \end{itemize}
 
-
-
-\begin{itemize}
-	\item{Shellcode injection}
-	\item{Position independent shellcode}
-	\item{NOP sled}
-\end{itemize}
-
 \section{Returning into executable code}
 \label{sec:returning-into-executable-code}
 
-\subsection{\Glsentrylong{ret2libc} (\glsentryshort{ret2libc})}
+\subsection{Return-to-libc (\glsentryshort{ret2libc})}
 \label{subsec:ret2libc}
 
 \subsection{\glsentrylong{rop} (\glsentryshort{rop})}
