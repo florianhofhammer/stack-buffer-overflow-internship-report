@@ -12,6 +12,9 @@ Therefore, \cref{chp:defense-mechanism-improvements} provides different approach
 \section{Compiler-based measures}
 \label{sec:compiler-based-measures}
 
+Depending on compiler options and flags, the compiled binary output can differ greatly.
+Some measures which help mitigate stack buffer overflows are presented in the following sections.
+
 \subsection{The \texttt{\_FORTIFY\_SOURCE} macro}
 \label{subsec:fortify-source}
 
@@ -34,26 +37,123 @@ The \texttt{\_FORTITY\_SOURCE} macro can either be manually set to a value highe
 
 \citename{Jelinek2004} states in the announcement of the original implementation of this feature that the run time overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
 
+\subsection{Optimizing compilation}
+\label{subsec:optimizing-compilation}
 
-\begin{itemize}
-	\item{
-		\texttt{ebp} mostly not used as frame base pointer register but as standard register when optimizations are enabled $\Rightarrow$ other stack layout
-	}
-\end{itemize}
+With compiler optimizations enabled (for example by passing the \texttt{-O3} flag), \gls{gcc} compiles code differently which might make a buffer overflow unusable.
+In the example seen in \cref{lst:optimization,lst:optimization-disassembly,lst:optimization-disassembly-optimized}, a stack buffer overflow vulnerability lies in the function \texttt{copy}, as a string is copied into an 8 byte stack buffer without checking for the size.
 
-\section{\glsentrylong{dep} (\glsentryshort{dep})}
-\label{sec:data-execution-prevention}
+\lstinputlisting[language=C,float=ht,caption={C program outputting ``Hello World!''},label={lst:optimization}]{code/optimization.c}
 
-\begin{itemize}
-	\item{NX bit}
-	\item{W $ \oplus $ X page permissions}
-\end{itemize}
+\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:optimization} with \texttt{gcc -o copy optimization.c -fno-stack-protector}, retrieved with \texttt{objdump -D --no-show-raw-insn copy}}, label={lst:optimization-disassembly}]
+0000000000001149 <copy>:
+1149:       push   %rbp
+114a:       mov    %rsp,%rbp
+114d:       sub    $0x20,%rsp
+1151:       mov    %rdi,-0x18(%rbp)
+1155:       mov    -0x18(%rbp),%rdx
+1159:       lea    -0x8(%rbp),%rax
+115d:       mov    %rdx,%rsi
+1160:       mov    %rax,%rdi
+1163:       callq  1030 <strcpy@plt>
+1168:       nop
+1169:       leaveq
+116a:       retq
 
-\section{Function Pointer Protection}
+000000000000116b <main>:
+116b:       push   %rbp
+116c:       mov    %rsp,%rbp
+116f:       sub    $0x10,%rsp
+1173:       mov    %edi,-0x4(%rbp)
+1176:       mov    %rsi,-0x10(%rbp)
+117a:       mov    -0x10(%rbp),%rax
+117e:       add    $0x8,%rax
+1182:       mov    (%rax),%rax
+1185:       mov    %rax,%rdi
+1188:       callq  1149 <copy>
+118d:       mov    $0x0,%edi
+1192:       callq  1040 <exit@plt>
+1197:       nopw   0x0(%rax,%rax,1)
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:optimization} with \texttt{gcc -o copy optimization.c -fno-stack-protector -O3}, retrieved with \texttt{objdump -D --no-show-raw-insn copy}}, label={lst:optimization-disassembly-optimized}]
+0000000000001050 <main>:
+1050:       sub    $0x18,%rsp
+1054:       mov    0x8(%rsi),%rsi
+1058:       lea    0x8(%rsp),%rdi
+105d:       callq  1030 <strcpy@plt>
+1062:       xor    %edi,%edi
+1064:       callq  1040 <exit@plt>
+1069:       nopl   0x0(%rax)
+\end{lstlisting}
+
+\Cref{lst:optimization-disassembly} shows the compiler output without optimizations enabled.
+It inhibits the expected behavior: \texttt{main} calls \texttt{copy}, \texttt{copy} increases the stack size to hold the 8 byte buffer and then copies the string handed to the function into said buffer.
+This allows to overflow the buffer and thus overwrite \gls{sfp} and \gls{rip} with user-controlled data.
+When \texttt{copy} then returns, the program continues execution at the user-controlled location.
+
+\Cref{lst:optimization-disassembly-optimized} in contrast shows the compiler output with optimizations enabled.
+The compiler performs several optimizations.
+For example, it omits the usage of the \texttt{rbp} register and does not address relative to the stack frame base but to the stack pointer.
+The main point, however, here is that the \texttt{copy} function is inlined, meaning that the necessary instructions are directly included in \texttt{main} instead of \texttt{main} calling \texttt{copy}.
+This still allows to overflow the buffer, which is now located on \texttt{main}'s stack frame.
+However, as \texttt{main} never returns but directly calls \texttt{exit}, there is no \gls{rip} to overwrite in order to gain control over the execution flow.
+
+Thus, in the given example, enabling compiler optimizations can prevent an attacker from diverting control flow.
+
+In general, this is not always the case.
+Not all functions are inlined and not in any case an attacker just wants to overwrite the \gls{rip} or \texttt{main} never returns.
+Thus, compiler optimizations should not be seen as a measure to prevent attackers from exploiting stack buffer overflows.
+They can make such vulnerabilities harder to exploit in certain cases but not mitigate them in total.
+
+There are a lot of further compiler optimizations which influence the stack layout or the code generation.
+However, listing and explaining all of them would exceed the scope of this paper and is thus not included here.
+
+\section{Executable space protection}
+\label{sec:executable-space-protection}
+
+As mentioned in \cref{sec:stack-buffer-overflows}, the mixture of control flow information and data on the stack is what enables attackers to exploit stack buffer overflow vulnerabilities in order to divert control flow.
+Because the stack contents are often user-controlled, for example when saving command line input on the stack, a measure of protection against executing previously written code is a possibility to harden a system against stack buffer overflows.
+Such protections are often referred to as \emph{executable space protection} or \emph{\gls{dep}}, where the latter term is often used for Microsoft Windows specific implementations \cite{Satran2018}.
+
+On 64 bit machines, memory pages are marked with specific flags signaling the permissions for the given memory page.
+Those flags include a \gls{nx} bit (marketed as \gls{xd} bit by Intel) \cite[801\psq]{Bryant2011}.
+If set to 1, this bit informs the processor that the marked memory page should not contain executable code and that accesses to such pages trying to execute code should throw an exception (segmentation fault).
+On 32 bit machines, such a bit was only emulated in software instead of implemented in hardware, as it is part of the \gls{pae} enabling 32 bit machines to use more than 4 GiB of memory \cite{Molnar2004}.
+
+This flags allows marking specific pages as non-executable, such as the memory pages containing a program's stack.
+Furthermore, a \gls{wxorx} approach on modern systems marks memory pages as either writable or executable but not both at the same time.
+This approach can be seen as an extension to just marking the stack as non-executable and prevents an attacker from executing code he has written into the program's memory space before.
+
+\section{Function pointer protection}
 \label{sec:function-pointer-protection}
+
+Buffer overflows can not only affect the \acrfull{sfp} and \acrfull{rip} but also other stack contents such as function pointers.
+Thus, an attacker can also divert control flow if they manage to overwrite a function pointer instead of the \gls{rip} and the program tries to call the corresponding function through such a function pointer afterwards.
+
+In order to make such attacks harder to achieve, \gls{glibc} implements a function pointer mangling macro, \texttt{PTR\_MANGLE} and the corresponding counterpart, \texttt{PTR\_DEMANGLE}.
+Those macros hide function pointer values by applying a XOR operation with a per-process randomized value%
+	\footnote{For an example on how this preprocessor macro can be used, see the \texttt{setjmp} sources on \href{https://sourceware.org/git/?p=glibc.git;a=blob;f=sysdeps/x86_64/setjmp.S;h=b4e05e0f0c1bb2184cf872a6a26eb18de6cfeba1;hb=9ea3686266dca3f004ba874745a4087a89682617}{sourceware.org}.}
+\cite{Newton2013}.
+An attacker cannot just overwrite the mangled function pointer because the overwritten value would be turned into an unusable junk on demangling the pointer with the unknown value.
+Thus, an attacker would have to somehow get hold of the secret value used for mangling and demangling pointers before creating their own mangled pointer.
+
+It is, however, important to note that such pointer mangling is not automatically conducted for any function pointers but that it is a \gls{glibc} internal macro used in \gls{glibc} in some cases.
 
 \section{\glsentrylong{aslr} (\glsentryshort{aslr})}
 \label{sec:address-space-layout-randomization}
+
+\gls{aslr} and \acrfull{pie} are some measures which were introduced to make it harder for an attacker to hit the correct address when overwriting function pointers or the \gls{rip}.
+
+\subsection{\glsentrylong{pie} (\glsentryshort{pie})}
+
+A \gls{pie} or \gls{pic} is an executable that was compiled to be loaded into virtual memory at an address chosen by the \gls{os} kernel.
+Instead of being loaded at a fixed address and containing fixed addresses for function calls or jumps, the binary executable only contains offsets and can thus be loaded at arbitrary memory addresses.
+
+On 64-bit Linux, \gls{elf} executables compiled as non-\acrshort{pie} are by default loaded at the base address \texttt{0x0000000000400000}.
+Compiled as \gls{pie}, they are loaded at the base address \texttt{0x0000555555554000} if \gls{aslr} is disabled.
+Thus, for an attacker to be able to determine addresses which might be usable as target addresses when overwriting control flow information, only the base address changes but the general approach stays the same.
+The real benefits of \gls{pic} come into play when combined with \gls{aslr}.
 
 \begin{itemize}
 	\item{Randomized on program startup}
