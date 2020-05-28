@@ -9,6 +9,15 @@
 	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
 \end{itemize}
 
+\section{Stack canaries}
+\label{sec:stack-canary-improvements}
+
+\begin{itemize}
+	\item{Random canary created on program startup}
+	\item{Same canary for all functions $\Rightarrow$ canary disclosure in one function makes all other functions vulnerable}
+	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
+\end{itemize}
+
 % Depending on time left!
 \chapter{OS assessment}
 \label{chp:os-assessment}

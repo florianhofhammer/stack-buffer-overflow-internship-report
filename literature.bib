@@ -1,5 +1,21 @@
 % Encoding: UTF-8
 
+@InProceedings{Abadi2005,
+  author    = {Abadi, Mart\'{\i}n and Budiu, Mihai and Erlingsson, \'{U}lfar and Ligatti, Jay},
+  booktitle = {Proceedings of the 12th ACM Conference on Computer and Communications Security},
+  date      = {2005},
+  title     = {Control-Flow Integrity},
+  doi       = {10.1145/1102120.1102165},
+  isbn      = {1595932267},
+  location  = {Alexandria, VA, USA},
+  pages     = {340–353},
+  publisher = {Association for Computing Machinery},
+  series    = {CCS ’05},
+  address   = {New York, NY, USA},
+  keywords  = {control-flow graph, inlined reference monitors, vulnerabilities, binary rewriting},
+  numpages  = {14},
+}
+
 @Article{AlephOne1996,
   author       = {{Aleph One}},
   date         = {1996},
@@ -20,6 +36,18 @@
   location  = {Indianapolis},
   pagetotal = {744},
   publisher = {Wiley Publishing, Inc.},
+}
+
+@InProceedings{Bierbaumer2018,
+  author    = {Bierbaumer, Bruno and Kirsch, Julian and Kittel, Thomas and Francillon, Aur{\'e}lien and Zarras, Apostolis},
+  booktitle = {ICT Systems Security and Privacy Protection},
+  date      = {2018},
+  title     = {Smashing the Stack Protector for Fun and Profit},
+  isbn      = {978-3-319-99828-2},
+  location  = {Cham},
+  pages     = {293--306},
+  publisher = {Springer International Publishing},
+  abstract  = {Software exploitation has been proven to be a lucrative business for cybercriminals. Unfortunately, protecting software against attacks is a long-lasting endeavor that is still under active research. However, certain software-hardening schemes are already incorporated into current compilers and are actively used to make software exploitation a complicated procedure for the adversaries. Stack canaries are such a protection mechanism. Stack canaries aim to prevent control flow hijack by detecting corruption of a specific value on the program's stack. Careful design and implementation of this conceptually straightforward mechanism is crucial to defeat stack-based control flow detours. In this paper, we examine 17 different stack canary implementations across multiple versions of the most popular Operating Systems running on various architectures. We systematically compare critical implementation details and introduce one new generic attack vector which allows bypassing stack canaries on current Linux systems running up-to-date multi-threaded software altogether. We release an open-source framework (CookieCrumbler) that identifies the characteristics of stack canaries on any platform it is compiled on and we propose mitigation techniques against stack-based attacks. Although stack canaries may appear obsolete, we show that when they are used correctly, they can prevent intrusions which even the more sophisticated solutions may potentially fail to block.},
 }
 
 @Online{Boelen2018,
@@ -72,7 +100,23 @@
   publisher = {No Starch Press, Inc.},
 }
 
-@Software{FSF,
+@Online{FSF2019,
+  author  = {{Free Software Foundation, Inc.}},
+  date    = {2019},
+  title   = {Instrumentation Options (Using the GNU Compiler Collection (GCC))},
+  url     = {https://gcc.gnu.org/onlinedocs/gcc-9.3.0/gcc/Instrumentation-Options.html},
+  urldate = {2020-05-28},
+}
+
+@Online{FSF2020,
+  author  = {{Free Software Foundation, Inc.}},
+  date    = {2020},
+  title   = {GCC, the GNU Compiler Collection},
+  url     = {https://www.gnu.org/software/gcc/},
+  urldate = {2020-05-20},
+}
+
+@Software{FSF2020a,
   author  = {{Free Software Foundation, Inc.}},
   date    = {2020},
   title   = {[glibc.git] / sysdeps / x86_64 / setjmp.S},
@@ -81,20 +125,19 @@
   version = {2.31},
 }
 
-@Online{FSF2020,
-  author  = {{Free Software Foundation, Inc.}},
-  title   = {GCC, the GNU Compiler Collection},
-  url     = {https://www.gnu.org/software/gcc/},
-  urldate = {2020-05-20},
-  year    = {2020},
-}
-
 @Online{GoogleLLC2020,
   author  = {{Google LLC}},
   title   = {android/kernel/common - Branches},
   url     = {https://android.googlesource.com/kernel/common/+refs},
   urldate = {2020-05-20},
   year    = {2020},
+}
+
+@Manual{IntelCorporation2019,
+  author  = {{Intel Corporation}},
+  date    = {2019-05},
+  title   = {Control-flow Enforcement Technology Specification},
+  version = {3.0},
 }
 
 @Online{Jelinek2004,

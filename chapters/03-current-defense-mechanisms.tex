@@ -171,11 +171,14 @@ With a \gls{pie} enabled binary, this would mean that it is not loaded at the ba
 \section{Stack canaries}
 \label{sec:stack-canaries}
 
-\begin{itemize}
-	\item{Random canary created on program startup}
-	\item{Same canary for all functions $\Rightarrow$ canary disclosure in one function makes all other functions vulnerable}
-	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
-\end{itemize}
+A stack canary, sometimes also referred to as \gls{ssp}, is a random value put onto the stack between function data and control flow information on entering a function.
+This value is checked when the affected function is about to return to the calling function.
+The goal is to detect stack buffer overflows or other stack corruption events that might alter control flow information by checking whether the value changed during the function's execution \cites[2]{Bierbaumer2018}{FSF2019}.
+Thus, overflowing a stack buffer with the goal of overflowing for example the return address saved on the stack enforces also overwriting the stack canary value with the correct value in order to not cause process abortion.
+
+By default, the instructions for inserting a stack canary and checking the canary for integrity are omitted by the \gls{gcc} C compiler automatically for functions that call the \texttt{alloca} function, have local buffers larger than 8 bytes or reference a local frame address \cite{FSF2019}, as the \texttt{-fstack-protector-strong} flag is set by default%
+	\footnote{Tested on \gls{gcc} 9.3.0 by invoking \texttt{gcc -v -Q test.c}, where \texttt{test.c} is an arbitrary but error-free C source code file}%
+.
 
 \section{Control Flow Integrity}
 \label{sec:cfi}
