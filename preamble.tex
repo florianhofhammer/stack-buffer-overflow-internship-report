@@ -1,3 +1,6 @@
+% set PDF output version to 1.7
+\pdfminorversion=7
+
 \documentclass[
 fontsize=12pt,          % Schriftgröße
 paper=a4,               % Papiergröße
@@ -33,8 +36,8 @@ open=right,             % Kapitel beginnen auf rechter Seite
 \usepackage{roboto}
 
 \setkomafont{subject}{\large}
-\setkomafont{title}{\LARGE\bfseries\robotocondensed}
-\setkomafont{subtitle}{\Large\robotocondensed}
+\setkomafont{title}{\LARGE\bfseries} % \robotocondensed yields font warning
+\setkomafont{subtitle}{\Large} % \robotocondensed yields font warning
 \setkomafont{author}{\Large}
 %\addtokomafont{publishers}{\normalsize\robotocondensed}
 
@@ -219,6 +222,7 @@ block=space,        % Add a little spacing inside bibliography entries
 \newcommand{\tabitem}{~~\llap{\textbullet}~~}
 
 % todonotes: Adds todo notes
+\setlength{\marginparwidth}{2cm}
 \usepackage[english]{todonotes}
 
 % glossaries: Adds possibility to create a glossary
@@ -233,7 +237,7 @@ block=space,        % Add a little spacing inside bibliography entries
 % don't reset footnote numbering for every chapter
 \counterwithout{footnote}{chapter}
 
-% enable emergency line breaks instead of over-full boxes
+% enable emergency line breaks to prevent over-full boxes
 \emergencystretch=1em
 
 %%% Local Variables:

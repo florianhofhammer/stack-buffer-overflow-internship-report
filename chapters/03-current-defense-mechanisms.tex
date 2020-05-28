@@ -35,7 +35,7 @@ If the check fails, the program execution is aborted with an error message \cite
 The \texttt{\_FORTITY\_SOURCE} macro can either be manually set to a value higher than 0 or is automatically activated when compiler optimizations are enabled, for example by passing the \texttt{-O3} flag to \gls{gcc} \cite{Kerrisk2020,Sharma2014,Sidhpurwala2018}.
 \todo{Include example? Not sure}
 
-\citename{Jelinek2004} states in the announcement of the original implementation of this feature that the run time overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
+\citeauthor{Jelinek2004} states in the announcement of the original implementation of this feature that the run time overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
 
 \subsection{Optimizing compilation}
 \label{subsec:optimizing-compilation}
@@ -141,24 +141,32 @@ Thus, an attacker would have to somehow get hold of the secret value used for ma
 It is, however, important to note that such pointer mangling is not automatically conducted for any function pointers but that it is a \gls{glibc} internal macro used in \gls{glibc} in some cases.
 
 \section{\glsentrylong{aslr} (\glsentryshort{aslr})}
-\label{sec:address-space-layout-randomization}
+\label{sec:aslr-and-pie}
 
 \gls{aslr} and \acrfull{pie} are some measures which were introduced to make it harder for an attacker to hit the correct address when overwriting function pointers or the \gls{rip}.
 
 \subsection{\glsentrylong{pie} (\glsentryshort{pie})}
+\label{subsec:position-independent-executable}
 
 A \gls{pie} or \gls{pic} is an executable that was compiled to be loaded into virtual memory at an address chosen by the \gls{os} kernel.
-Instead of being loaded at a fixed address and containing fixed addresses for function calls or jumps, the binary executable only contains offsets and can thus be loaded at arbitrary memory addresses.
+Instead of being loaded at a fixed address and containing fixed addresses for function calls or jumps, the binary executable contains offsets and can thus be loaded at arbitrary memory addresses.
 
 On 64-bit Linux, \gls{elf} executables compiled as non-\acrshort{pie} are by default loaded at the base address \texttt{0x0000000000400000}.
 Compiled as \gls{pie}, they are loaded at the base address \texttt{0x0000555555554000} if \gls{aslr} is disabled.
 Thus, for an attacker to be able to determine addresses which might be usable as target addresses when overwriting control flow information, only the base address changes but the general approach stays the same.
 The real benefits of \gls{pic} come into play when combined with \gls{aslr}.
 
-\begin{itemize}
-	\item{Randomized on program startup}
-	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
-\end{itemize}
+\subsection{\glsentrylong{aslr} (\glsentryshort{aslr})}
+\label{subsec:address-space-layout-randomization}
+
+In modern Linux kernels, the \gls{aslr} security feature is enabled by default \cite{Boelen2018}.
+The basic idea of \gls{aslr} is to randomize the virtual memory addresses at which several memory sections used by a program are loaded.
+Ideally, libraries, the stack, the heap, the executable itself (cf. \cref{subsec:position-independent-executable}), and so on are loaded at addresses unknown to an attacker.
+This makes it harder for an attacker to find correct addresses which they could use in a stack buffer overflow exploit to overwrite control flow information.
+
+With a \gls{pie} enabled binary, this would mean that it is not loaded at the base address \texttt{0x0000555555554000} as mentioned \hyperref[subsec:position-independent-executable]{above} but an a base address that changes from run to run on a per-process basis \cite{MarcoGisbert2014}.
+
+\gls{aslr} randomizing the stack base address, the base address at which libraries are loaded, the heap base address, the code base address and several other memory objects is the default setting in current Linux kernels \cites{Boelen2018,Kernel2020a}[14]{OracleCorporation2020}.
 
 \section{Stack canaries}
 \label{sec:stack-canaries}
