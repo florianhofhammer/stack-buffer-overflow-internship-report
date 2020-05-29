@@ -4,6 +4,9 @@
 In this chapter, we describe several methods to gain control over a program vulnerable to stack buffer overflow attacks.
 In each of the sections, it is assumed that none of the measures from \cref{chp:current-defense-mechanisms} are enabled or active unless otherwise stated.
 
+In \cref{sec:code-injection,sec:code-reuse} we present the two basic types of stack buffer overflow attacks, \nameref{sec:code-injection} and \nameref{sec:code-reuse}.
+As their basic approaches are easily mitigated by different defense mechanisms presented in \cref{chp:current-defense-mechanisms}, the successive sections then present several possibilities on how to bypass certain security measures.
+
 \todo{
  Differentiate between RIP and SFP overwriting? 
  If yes, in sections if applicable or in own section?
@@ -14,6 +17,9 @@ In each of the sections, it is assumed that none of the measures from \cref{chp:
 
 \section{Code injection}
 \label{sec:code-injection}
+
+\Cref{subsec:ci-operating-principle} first presents what code injection is and how it works.
+\Cref{subsec:ci-operating-principle} then provides information on what makes it difficult to succeed in code injection attacks and how they can be mitigated.
 
 \subsection{Operating principle}
 \label{subsec:ci-operating-principle}
@@ -147,17 +153,47 @@ However, \gls{aslr} has several weaknesses which are further described in \cref{
 
 In general, the combination of \gls{dep} and \gls{aslr} provides a strong defense against code injection stack buffer overflow attacks.
 
-\section{Returning into executable code}
-\label{sec:returning-into-executable-code}
+\section{Code reuse}
+\label{sec:code-reuse}
+
+In \cref{subsec:cr-ret2libc,subsec:cr-rop,subsec:cr-jop,subsec:cr-cop} we first present different approaches for code reuse attacks.
+They all have in common that they reuse existing code in memory instead of injecting code into the attacked process's address space.
+Thus, such attacks can't be prevented by marking user-controlled memory pages such as those containing the stack memory as non-executable.
+Nevertheless, approaches on how to mitigate such attacks exist and are described in \cref{subsec:cr-countermeasures}.
 
 \subsection{Return-to-libc (\glsentryshort{ret2libc})}
-\label{subsec:ret2libc}
+\label{subsec:cr-ret2libc}
+
+After the use of the \gls{nx} bit became more and more widespread, code injection exploits based on stack buffer overflows as described \hyperref[sec:code-injection]{above} became harder and in many cases impossible to achieve.
+Attackers thus had to rely on memory pages marked as executable as targets for overwritten code pointers.
+Such pages contain the current program's code or code from libraries mapped into the process's address space.
+
+As \gls{glibc} is mapped into basically every C program's address space and contains a lot of different functions, including for example \texttt{system} to execute shell commands or \texttt{execve} to replace the current process with an arbitrary other process, functions in \gls{glibc} quickly became frequent targets for overwritten function pointers.
+For example, if an attacker knows the version and virtual memory address of \gls{glibc}, they can easily determine the address of a ``/bin/sh'' string and the \texttt{system} function.
+When they then exploit a stack buffer overflow and overwrite the targeted code pointer with the address of \texttt{system} and then put the address of ``/bin/sh'' onto the stack directly after the code pointer (in accordance with the 32 bit \texttt{x86} \gls{abi}), \texttt{system} is executed with ``/bin/sh'' as an argument instead of the code at the original code pointer's target \cite{SolarDesigner1997}.
+
+\Cref{fig:ret2libc} shows the stack layout after an exemplary stack buffer overflow aiming to leverage a \gls{ret2libc} exploit.
+The backwards arrangement of address and string bytes is due to the little-endian representation.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=0.8\textwidth]{figures/ret2libc}
+	\caption{Stack layout after a stack buffer overflow with \acrshort{ret2libc} approach (own graphical representation) (cf. \cref{fig:stack-layout})}
+	\label{fig:ret2libc}
+\end{figure}
+
+It is of course also possible to divert control flow to other functions in \gls{glibc} or in the executable.
+A common variant of \gls{ret2libc} attacks are \gls{ret2plt} attacks where code pointers are overwritten with \gls{plt} addresses instead of the \gls{glibc} address of the targeted function.
+This eases the attack, as the executable's addresses are already known before run time and thus the correct addresses in the \gls{plt} section of the executable can be easily determined.
 
 \subsection{\glsentrylong{rop} (\glsentryshort{rop})}
-\label{subsec:rop}
+\label{subsec:cr-rop}
 
 \subsection{\glsentrylong{jop} (\glsentryshort{jop})}
-\label{subsec:jop}
+\label{subsec:cr-jop}
 
 \subsection{\glsentrylong{cop} (\glsentryshort{cop})}
-\label{subsec:cop}
+\label{subsec:cr-cop}
+
+\subsection{Difficulties and countermeasures}
+\label{subsec:cr-countermeasures}

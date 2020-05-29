@@ -43,7 +43,7 @@ The \texttt{\_FORTITY\_SOURCE} macro can either be manually set to a value highe
 With compiler optimizations enabled (for example by passing the \texttt{-O3} flag), \gls{gcc} compiles code differently which might make a buffer overflow unusable.
 In the example seen in \cref{lst:optimization,lst:optimization-disassembly,lst:optimization-disassembly-optimized}, a stack buffer overflow vulnerability lies in the function \texttt{copy}, as a string is copied into an 8 byte stack buffer without checking for the size.
 
-\lstinputlisting[language=C,float=ht,caption={C program outputting ``Hello World!''},label={lst:optimization}]{code/optimization.c}
+\lstinputlisting[language=C,float=ht,caption={C program copying \texttt{argv[1]} into a function-local buffer},label={lst:optimization}]{code/optimization.c}
 
 \begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:optimization} with \texttt{gcc -o copy optimization.c -fno-stack-protector}, retrieved with \texttt{objdump -D --no-show-raw-insn copy}}, label={lst:optimization-disassembly}]
 0000000000001149 <copy>:
