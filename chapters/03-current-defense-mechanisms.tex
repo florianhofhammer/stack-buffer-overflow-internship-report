@@ -120,8 +120,9 @@ On 64 bit machines, memory pages are marked with specific flags signaling the pe
 Those flags include a \gls{nx} bit (marketed as \gls{xd} bit by Intel) \cite[801\psq]{Bryant2011}.
 If set to 1, this bit informs the processor that the marked memory page should not contain executable code and that accesses to such pages trying to execute code should throw an exception (segmentation fault).
 On 32 bit machines, such a bit was only emulated in software instead of implemented in hardware, as it is part of the \gls{pae} enabling 32 bit machines to use more than 4 GiB of memory \cite{Molnar2004}.
+The Linux kernel makes use of the \gls{nx} bit by default since \citeyear{Cook2010} \cite{Cook2010}.
 
-This flags allows marking specific pages as non-executable, such as the memory pages containing a program's stack.
+These flags allows marking specific pages as non-executable, such as the memory pages containing a program's stack.
 Furthermore, a \gls{wxorx} approach on modern systems marks memory pages as either writable or executable but not both at the same time.
 This approach can be seen as an extension to just marking the stack as non-executable and prevents an attacker from executing code he has written into the program's memory space before.
 
@@ -172,17 +173,11 @@ With a \gls{pie} enabled binary, this would mean that it is not loaded at the ba
 \label{sec:stack-canaries}
 
 A stack canary, sometimes also referred to as \gls{ssp}, is a random value put onto the stack between function data and control flow information on entering a function.
-This value is checked when the affected function is about to return to the calling function.
+Control flow information here explicitly includes the contents of callee-saved registers which are pushed onto the stack before executing the function's actual code.
+This canary value is checked for integrity when the affected function is about to return to the calling function by comparing it to the original, protected value.
 The goal is to detect stack buffer overflows or other stack corruption events that might alter control flow information by checking whether the value changed during the function's execution \cites[2]{Bierbaumer2018}{FSF2019}.
 Thus, overflowing a stack buffer with the goal of overflowing for example the return address saved on the stack enforces also overwriting the stack canary value with the correct value in order to not cause process abortion.
 
-By default, the instructions for inserting a stack canary and checking the canary for integrity are omitted by the \gls{gcc} C compiler automatically for functions that call the \texttt{alloca} function, have local buffers larger than 8 bytes or reference a local frame address \cite{FSF2019}, as the \texttt{-fstack-protector-strong} flag is set by default%
+By default, the instructions for inserting a stack canary and checking the canary for integrity are emitted by the \gls{gcc} C compiler automatically for functions that call the \texttt{alloca} function, have local buffers larger than 8 bytes or reference a local frame address \cite{FSF2019}, as the \texttt{-fstack-protector-strong} flag is set by default%
 	\footnote{Tested on \gls{gcc} 9.3.0 by invoking \texttt{gcc -v -Q test.c}, where \texttt{test.c} is an arbitrary but error-free C source code file}%
 .
-
-\section{Control Flow Integrity}
-\label{sec:cfi}
-
-\begin{itemize}
-	\item{Intel CET $\Rightarrow$ shadow stack, branch validation}
-\end{itemize}

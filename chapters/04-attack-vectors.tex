@@ -121,7 +121,7 @@ With 5-level page tables, 56 bits are utilized and the upper 8 bits are set to z
 This fact implies that there is always at least one \texttt{0x00} byte in an address.
 As such a \texttt{0x00} byte also marks the end of a string, an attacker might not be able to write past such a byte if the overflow occurs in a string operation function, such as \texttt{strcpy} or \texttt{gets}.
 As the aforementioned processor architectures use little-endian byte addressing%
-	\footnote{least significant byte first in comparison to big-endian addressing with most significant byte first}%
+	\footnote{Least significant byte first in comparison to big-endian addressing with most significant byte first}%
 , the \texttt{0x00} bytes come last and thus probably don't impose any problems when overwriting the return address, as the upper bytes are already set to \texttt{0x00} because of the original return address also being a userspace virtual memory address. 
 However, usually a \gls{sfp} also has to be overwritten before even reaching the \gls{rip} (cf. \cref{fig:stack-layout}).
 Because of this pointer also being a userspace virtual memory address, it also has the upper bytes set to \texttt{0x00} and can cause problems when overflowing a buffer with string based functions.
@@ -131,11 +131,21 @@ In an example as in \cref{lst:local-global-buffer}, this problem does not occur 
 \subsubsection{\glsentrylong{dep} (\glsentryshort{dep})}
 \label{subsubsec:ci-data-execution-prevention}
 
+Seeing that the \gls{nx} bit is used by the Linux kernel by default (cf. \cref{sec:executable-space-protection}), \gls{dep} features prevent stack contents from being executable by default.
+For the stack being marked as executable, the \texttt{-z execstack} command line parameter has to be passed to \gls{gcc} explicitly.
 
-\begin{itemize}
-	\item{\gls{nx} bit}
-	\item{\gls{aslr}}
-\end{itemize}
+Thus, it is not possible to make use of code injection into a process's address space on modern \glspl{os}, as the injected code is located on memory pages marked as non-executable.
+This not only includes a function's local stack memory but also the memory areas where environment variables are located as well as memory regions used for storing global variables.
+
+\subsubsection{\glsentrylong{aslr} (\glsentryshort{aslr})}
+\label{subsubsec:ci-aslr}
+
+Even if user-writable memory regions are marked as executable, for example because a \gls{jit} compiler needs to store generated code, \gls{aslr} can make it extraordinarily harder for an attacker to overwrite code pointers such as the \gls{rip} or function pointers with addresses pointing to valid memory areas and especially pointing to the user-generated shellcode or into a \gls{nop} sled.
+
+However, \gls{aslr} has several weaknesses which are further described in \cref{chp:defense-mechanism-improvements} and where bypass approaches are presented in following sections.
+\todo{Make reference more concrete than just referring to a whole chapter}
+
+In general, the combination of \gls{dep} and \gls{aslr} provides a strong defense against code injection stack buffer overflow attacks.
 
 \section{Returning into executable code}
 \label{sec:returning-into-executable-code}
