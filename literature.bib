@@ -50,6 +50,21 @@
   abstract  = {Software exploitation has been proven to be a lucrative business for cybercriminals. Unfortunately, protecting software against attacks is a long-lasting endeavor that is still under active research. However, certain software-hardening schemes are already incorporated into current compilers and are actively used to make software exploitation a complicated procedure for the adversaries. Stack canaries are such a protection mechanism. Stack canaries aim to prevent control flow hijack by detecting corruption of a specific value on the program's stack. Careful design and implementation of this conceptually straightforward mechanism is crucial to defeat stack-based control flow detours. In this paper, we examine 17 different stack canary implementations across multiple versions of the most popular Operating Systems running on various architectures. We systematically compare critical implementation details and introduce one new generic attack vector which allows bypassing stack canaries on current Linux systems running up-to-date multi-threaded software altogether. We release an open-source framework (CookieCrumbler) that identifies the characteristics of stack canaries on any platform it is compiled on and we propose mitigation techniques against stack-based attacks. Although stack canaries may appear obsolete, we show that when they are used correctly, they can prevent intrusions which even the more sophisticated solutions may potentially fail to block.},
 }
 
+@InProceedings{Bletsch2011,
+  author    = {Bletsch, Tyler and Jiang, Xuxian and Freeh, Vince W. and Liang, Zhenkai},
+  booktitle = {Proceedings of the 6th ACM Symposium on Information, Computer and Communications Security},
+  date      = {2011},
+  title     = {Jump-Oriented Programming: A New Class of Code-Reuse Attack},
+  doi       = {10.1145/1966913.1966919},
+  isbn      = {978-1-4503-0564-8},
+  location  = {Hong Kong, China},
+  pages     = {30–40},
+  publisher = {Association for Computing Machinery},
+  series    = {ASIACCS ’11},
+  address   = {New York, NY, USA},
+  numpages  = {11},
+}
+
 @Online{Boelen2018,
   author  = {Michael Boelen},
   date    = {2018-06-25},
@@ -154,6 +169,16 @@
   date    = {2019-05},
   title   = {Control-flow Enforcement Technology Specification},
   version = {3.0},
+}
+
+@Manual{IntelCorporation2020,
+  author   = {{Intel Corporation}},
+  date     = {2020-05-27},
+  title    = {Intel\textregistered{} 64 and IA-32 Architectures Software Developer's Manual},
+  subtitle = {Instruction Set Reference, A-Z},
+  url      = {https://software.intel.com/content/dam/develop/public/us/en/documents/325383-sdm-vol-2abcd.pdf},
+  urldate  = {2020-06-02},
+  volume   = {2},
 }
 
 @Online{Jelinek2004,
@@ -319,7 +344,7 @@
 @Manual{OracleCorporation2020,
   author  = {{Oracle Corporation}},
   date    = {2020-01-21},
-  title   = {Oracle\textregistered Linux 8 - Enhancing System Security},
+  title   = {Oracle\textregistered{} Linux 8 - Enhancing System Security},
   version = {9094},
 }
 
