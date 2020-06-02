@@ -125,6 +125,7 @@ Including the terminating \texttt{0x00} byte, this string copy operation thus ov
 	\caption{Stack layout of a function with two local variables: a 12 byte buffer (\texttt{char c[12]}) and a pointer (\texttt{char *bar})}
 	\label{fig:stack-layout}
 \end{figure}
+\todo{If enough time, edit all graphics to represent 64 bit stacks}
 
 If an attacker can control the data which is copied onto the stack, they can carefully craft an input string so that they can overwrite the \gls{sfp} or \gls{rip} with attacker-controlled data and thus control where the program tries to look for function-local data (overwritten \gls{sfp}) or to continue execution (overwritten \gls{rip}) after it returns from the current function.
 A stack buffer overflow always occurs if a buffer just like \texttt{c} in \cref{lst:vulnerable-function} is filled with more data than it can hold.

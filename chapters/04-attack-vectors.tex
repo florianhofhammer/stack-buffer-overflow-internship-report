@@ -169,8 +169,8 @@ Attackers thus had to rely on memory pages marked as executable as targets for o
 Such pages contain the current program's code or code from libraries mapped into the process's address space.
 
 As \gls{glibc} is mapped into basically every C program's address space and contains a lot of different functions, including for example \texttt{system} to execute shell commands or \texttt{execve} to replace the current process with an arbitrary other process, functions in \gls{glibc} quickly became frequent targets for overwritten function pointers.
-For example, if an attacker knows the version and virtual memory address of \gls{glibc}, they can easily determine the address of a ``/bin/sh'' string and the \texttt{system} function.
-When they then exploit a stack buffer overflow and overwrite the targeted code pointer with the address of \texttt{system} and then put the address of ``/bin/sh'' onto the stack directly after the code pointer (in accordance with the 32 bit \texttt{x86} \gls{abi}), \texttt{system} is executed with ``/bin/sh'' as an argument instead of the code at the original code pointer's target \cite{SolarDesigner1997}.
+For example, if an attacker knows the version and virtual memory address of \gls{glibc}, they can easily determine the address of a ``/bin/sh'' string and the \texttt{system} function by their offset in the \gls{glibc} \gls{elf} file and the base address.
+When they then exploit a stack buffer overflow and overwrite the targeted code pointer with the address of \texttt{system} and then put the address of ``/bin/sh'' onto the stack directly after the code pointer (in accordance with the 32 bit \texttt{x86} \gls{abi} \cites[11\psq]{Lu2015}[17\psqq]{Fog2019}), \texttt{system} is executed with ``/bin/sh'' as an argument instead of the code at the original code pointer's target \cite{SolarDesigner1997}.
 
 \Cref{fig:ret2libc} shows the stack layout after an exemplary stack buffer overflow aiming to leverage a \gls{ret2libc} exploit.
 The backwards arrangement of address and string bytes is due to the little-endian representation.
@@ -186,8 +186,27 @@ It is of course also possible to divert control flow to other functions in \gls{
 A common variant of \gls{ret2libc} attacks are \gls{ret2plt} attacks where code pointers are overwritten with \gls{plt} addresses instead of the \gls{glibc} address of the targeted function.
 This eases the attack, as the executable's addresses are already known before run time and thus the correct addresses in the \gls{plt} section of the executable can be easily determined.
 
+The \gls{ret2libc} approach has a huge downside on 64 bit systems.
+According to the \texttt{x86\_64} \gls{abi}, function arguments are passed in registers instead of on the stack as far as possible \cites[19\psqq]{Lu2018}[17\psqq]{Fog2019}.
+Thus, it is not possible to execute arbitrary system commands or programs by overwriting code pointers with the address of \texttt{system} or \texttt{execve} without correctly setting up the necessary processor registers beforehand.
+
+
 \subsection{\glsentrylong{rop} (\glsentryshort{rop})}
 \label{subsec:cr-rop}
+
+\gls{rop} is an approach to work around the \hyperref[subsec:cr-ret2libc]{aforementioned} necessity to correctly setup the processor registers in order to call specific functions on \texttt{x86\_64} machines.
+Instead of exploiting a stack buffer overflow vulnerability by overwriting a code pointer (be it a function pointer in function-local data or a \gls{rip}) directly with the address of a function (e.g. \texttt{system}), the code pointer is overwritten with the address of a so-called \emph{return gadget}.
+Return gadgets are short instruction chains ending in a \texttt{ret} instruction.
+Such gadgets can then be chained up to execute arbitrary instructions.
+
+Sticking with the example of an attacker trying to execute \texttt{system(``/bin/sh'')}, an attacker might try to find a gadget that pops a value from the stack into the register \texttt{rdi} and then returns by looking through the executable binary or \gls{glibc} to find byte sequences encoding such instructions that are loaded into executable memory at run time%
+	\footnote{Finding such gadgets can either be done manually or automatically by using tools such as \href{https://github.com/JonathanSalwan/ROPgadget}{ROPGadget} or \href{https://github.com/sashs/Ropper}{ropper}.}%
+.
+The attacker would then overwrite the code pointer with the address of a \texttt{pop rdi; ret} gadget, put the address of a ``/bin/sh'' string after the gadget address so that this address is popped into \texttt{rdi} and lastly put the address of \texttt{system} after the address of the string.
+This approach prepares the necessary registers (here: \texttt{rdi}) and then calls a function (here: \texttt{system}) with the attacker-controlled parameters.
+
+Gadgets can be chained up by putting several gadget addresses one after the other onto the stack so that the \texttt{ret} instruction of a gadget automatically returns to the next gadget.
+Because of this behavior, arbitrary code execution is possible as long as an attacker can find binary encodings of the necessary assembly instructions in executable memory pages of the process's address space.
 
 \subsection{\glsentrylong{jop} (\glsentryshort{jop})}
 \label{subsec:cr-jop}
