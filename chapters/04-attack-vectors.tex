@@ -12,7 +12,6 @@ As their basic approaches are easily mitigated by different defense mechanisms p
  If yes, in sections if applicable or in own section?
  What about overwriting data in general?
  Maybe own section at the end? Or somewhere in the middle?
-%\section{Overwriting \glsentryshort{rip} and \glsentryshort{sfp}}
 }
 
 \section{Code injection}
@@ -220,6 +219,10 @@ Because \gls{rop} gadgets have bi-directional control flow (handing the control 
 \gls{jop} gadgets on the other side inhibit uni-directional control flow by branching without regard to any following stack contents.
 This behavior implies the necessity that either each gadget somehow loads the address of the next gadget in a register so that the indirect jump at the end of the gadget jumps to the next gadget or that the register's contents are updated between executing two consecutive gadgets.
 
+
+\subsubsection{\glsentryshort{jop} based on dispatcher gadgets}
+\label{subsubsec:cr-jop-dispatcher}
+
 \citeauthor{Bletsch2011} propose an approach based on a dispatch table where they differentiate between \emph{functional} and \emph{dispatcher} gadgets \cite{Bletsch2011}.
 The former are gadgets which contain the actual code an attacker might want to run, the latter are gadgets which are responsible for chaining up the functional gadgets so that the desired result can be achieved.
 The idea is that an adversary injects a dispatch table into the program's memory which can be located at arbitrary memory (on the stack, on the heap, in global variables or anywhere else).
@@ -228,6 +231,7 @@ The dispatcher gadget operates on the dispatch table register and advances the a
 The table itself can be implemented for example as a consecutive array of addresses or a linked list, depending on the dispatcher gadget used.
 The table entries then are the addresses of the functional gadgets which use the register containing the dispatcher gadget address as the register for the indirect jump at the end of the gadget.
 This way, the dispatch table register acts as a virtual program counter that is advanced to the next gadget after each functional gadget when said gadget jumps back to the dispatcher gadget \cite{Bletsch2011}.
+A simple example for such a control flow is shown in \cref{fig:jop-dispatcher}.
 
 This approach has several advantages over the \gls{rop} approach:
 Firstly, it does not rely on stack contents written after the overwritten code pointer.
@@ -237,8 +241,42 @@ Secondly, measures implemented to detect \gls{rop} exploits observe behavior lik
 On the other hand, a \gls{jop} exploit is more difficult to implement as it doesn't suffice to put gadget addresses onto the stack but it is also necessary to account for side-effects when a gadget manipulates one of the registers containing the dispatch table address or the dispatcher gadget address.
 Therefore, it might be necessary to sometimes insert gadgets which do not contribute to the desired functionality but which are just necessary to compensate for side-effects of gadgets that interrupt the \gls{jop} chain \cite{Bletsch2011}.
 
+\subsubsection{\glsentryshort{jop} based on trampoline gadgets}
+\label{subsubsec:cr-jop-trampoline}
+
+\citeauthor{Checkoway2010} propose an approach based on \emph{trampoline} gadgets instead of dispatcher gadgets.
+Where \citeauthor{Bletsch2011} use a dispatcher gadget to manipulate a dispatch table pointer so that the indirect jump at the end of the gadget continues with the next desired functional gadget, \citeauthor{Checkoway2010} do not just modify the pointer to the next gadget but completely replace it in their trampoline gadget.
+The overall idea is to include such a trampoline gadget in between functional gadgets in order to retrieve the next functional gadget address from the stack and jump to that gadget as shown in \cref{fig:jop-trampoline}.
+The basic approach is thus very similar to the dispatcher gadget approach with the slight difference that the trampoline gadget based approach is relying on the stack contents similar to a \gls{rop} exploit, as it mixes gadget addresses and data on the stack just like a \gls{rop} exploit.
+It thus also uses the stack pointer as a virtual program counter instead of a specified register as it is the case when using dispatcher gadgets.
+\citeauthor{Checkoway2010} because of those similarities refer to their attack as ``return-oriented programming \textit{without using return instructions}'' \cite{Checkoway2010}.
+
+Similar to the \hyperref[subsubsec:cr-jop-dispatcher]{dispatcher gadget approach}, the trampoline gadget approach can bypass \gls{rop} protections based on detecting a high frequency of \texttt{ret} instructions or a violation of the stack's \gls{lifo} principle \cite{Checkoway2010}.
+
+\begin{figure}[htb]
+	\centering
+	\begin{subfigure}[t]{0.8\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/jop-dispatcher}
+		\caption{Exemplary \gls{jop} control flow with a dispatcher gadget (own graphical representation based on figure 3 from \cite{Bletsch2011})}
+		\label{fig:jop-dispatcher}
+		\vspace*{1em}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.8\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/jop-trampoline}
+		\caption{Examplary \gls{jop} control flow with a trampoline gadget (own graphical representation based on figure 1 from \cite{Checkoway2010})}
+		\label{fig:jop-trampoline}
+	\end{subfigure}
+	\caption{Control flow of dispatcher and trampoline based \gls{jop} exploits. Note the difference between indirect and direct jump in the dispatcher and trampoline gadget.}
+	\label{fig:jump-oriented-programming}
+\end{figure}
+
+
 \subsection{\glsentrylong{cop} (\glsentryshort{cop})}
 \label{subsec:cr-cop}
+
+
 
 \subsection{Difficulties and countermeasures}
 \label{subsec:cr-countermeasures}
