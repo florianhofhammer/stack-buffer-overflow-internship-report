@@ -33,12 +33,17 @@ open=right,             % Kapitel beginnen auf rechter Seite
 % Fonts
 % ----------------------------------------------------
 \usepackage{lmodern}
+\usepackage{fix-cm}
+\rmfamily
+\DeclareFontShape{T1}{lmr}{b}{sc}{<->ssub*cmr/bx/sc}{}
+\DeclareFontShape{T1}{lmr}{bx}{sc}{<->ssub*cmr/bx/sc}{}
 \usepackage{roboto}
 
 \setkomafont{subject}{\large}
 \setkomafont{title}{\LARGE\bfseries} % \robotocondensed yields font warning
 \setkomafont{subtitle}{\Large} % \robotocondensed yields font warning
 \setkomafont{author}{\Large}
+\setkomafont{date}{\small}
 %\addtokomafont{publishers}{\normalsize\robotocondensed}
 
 % ----------------------------------------------------
@@ -60,15 +65,22 @@ open=right,             % Kapitel beginnen auf rechter Seite
 \newcommand{\email}[1]{\gdef\@email{#1}}
 \newcommand{\matrno}[1]{\gdef\@matrno{#1}}
 \newcommand{\institute}[1]{\gdef\@institute{#1}}
-\newcommand{\director}[3]{%
+\newcommand{\director}[4]{%
   \gdef\@director@name{#1}%
-  \gdef\@director@firstaffiliation{#2}%
-  \gdef\@director@secondaffiliation{#3}%
+  \gdef\@director@title{#2}%
+  \gdef\@director@firstaffiliation{#3}%
+  \gdef\@director@secondaffiliation{#4}%
 }
-\newcommand{\coordinator}[3]{%
+\newcommand{\coordinator}[4]{%
   \gdef\@coordinator@name{#1}%
-  \gdef\@coordinator@firstaffiliation{#2}%
-  \gdef\@coordinator@secondaffiliation{#3}%
+  \gdef\@coordinator@title{#2}%
+  \gdef\@coordinator@firstaffiliation{#3}%
+  \gdef\@coordinator@secondaffiliation{#4}%
+}
+\newcommand{\organization}[3]{%
+  \gdef\@organization@name{#1}%
+  \gdef\@organization@address{#2}%
+  \gdef\@organization@city{#3}%
 }
 \makeatother
 
@@ -163,6 +175,7 @@ block=space,        % Add a little spacing inside bibliography entries
 \NewTranslation{ngerman}{director}{Praktikumsbetreuer}
 \NewTranslation{ngerman}{matrno}{Matrikelnummer}
 \NewTranslation{ngerman}{institute}{Computer Science Department\\École Polytechnique}
+\NewTranslation{ngerman}{hostorga}{Host-Organisation}
 \NewTranslation{ngerman}{duedate}{Abgabedatum}
 \NewTranslation{ngerman}{dates}{Daten}
 \NewTranslation{ngerman}{regularlit}{Literatur}
@@ -181,6 +194,7 @@ block=space,        % Add a little spacing inside bibliography entries
 \NewTranslationFallback{director}{Internship director}
 \NewTranslationFallback{matrno}{Matriculation number}
 \NewTranslationFallback{institute}{Computer Science Department\\École Polytechnique}
+\NewTranslationFallback{hostorga}{Host organization}
 \NewTranslationFallback{duedate}{Submission date}
 \NewTranslationFallback{dates}{Dates}
 \NewTranslationFallback{regularlit}{Literature}

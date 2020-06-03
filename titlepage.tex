@@ -12,7 +12,11 @@
       \@subject\\
       for the \@course \space internship\par
       in the \@degree \space program
-    }
+    }\\
+
+    {\usekomafont{date}
+	  \dates
+    }\\
 
     \vfill
     {\usekomafont{title}\@title}
@@ -28,7 +32,7 @@
 
   \vfill
   \centering
-  \includegraphics[height=100mm]{figures/Ecole_polytechnique_signature}\\*[2em]
+  \includegraphics[height=100mm]{figures/Ecole_polytechnique_signature}\\
   \includegraphics[width=.3\paperwidth]{figures/inr_logo_rouge_rvb}
   \hspace*{2em}
   \includegraphics[width=.3\paperwidth]{figures/NewlogoI3S}\\[-5em]
@@ -46,16 +50,20 @@
 
 \begin{tabbing}
   This is just a placeholder \= Here comes the content \kill
-  \GetTranslationFor{american}{coordinator}: \> \textbf{\@coordinator@name},\\
+  \GetTranslationFor{american}{coordinator}: \> \textbf{\@coordinator@name}, \@coordinator@title \\
   \> \@coordinator@firstaffiliation\\
   \> \@coordinator@secondaffiliation\\[2mm]
-  \GetTranslationFor{american}{director}: \> \textbf{\@director@name},\\
+  \GetTranslationFor{american}{director}: \> \textbf{\@director@name}, \@director@title \\
   \> \@director@firstaffiliation\\
   \> \@director@secondaffiliation\\[2mm]
+  \GetTranslationFor{american}{hostorga}: \> \@organization@name \\
+  \> \@organization@address \\
+  \> \@organization@city \\[2mm]
 %  \GetTranslationFor{american}{matrno}: \> \@matrno\\[2mm]
 %  \GetTranslationFor{american}{duedate}: \> \@date
   \GetTranslationFor{american}{dates}: \> \dates
 \end{tabbing}
+\vspace*{-5em}
 \makeatother
 
 %%% Local Variables:
