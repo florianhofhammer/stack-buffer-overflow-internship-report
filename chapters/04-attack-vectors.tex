@@ -326,3 +326,25 @@ Using strong trampoline gadgets and intra stack pivot gadgets, attacks similar t
 
 \subsection{Difficulties and countermeasures}
 \label{subsec:cr-countermeasures}
+
+In general, the same difficulties and countermeasures against code reuse exploits apply as for code injection attacks (cf. \cref{subsec:ci-countermeasures}).
+However, some distinctions have to be made.
+
+\subsubsection{\glsentrylong{aslr} (\glsentryshort{aslr})}
+\label{subsubsec:cr-aslr}
+
+With code injection techniques, \gls{aslr} is a huge hindering, as the stack base address and thus the address of the environment variable or the stack buffer containing shellcode changes with each process instantiation.
+
+For code reuse attacks, \gls{aslr} only poses a problem if the executable is compiled as \gls{pie}.
+If not, the addresses of binary instructions or bytes possibly interpreted as valid instructions inside the executable binary are fixed and thus the virtual memory address at which they are loaded at run time is already known beforehand.
+Even though the memory base addresses of any linked libraries are still unknown and their contents thus cannot easily be taken into consideration for \gls{rop}, \gls{jop} or \gls{cop} gadgets, the actual executable may provide enough gadgets for successful attacks if it is big enough or if libraries are statically linked into it instead of dynamically loaded at run time.
+If not looking at gadget-based exploits but simple function calls as described for \gls{ret2libc} or \gls{ret2plt} attacks, the \texttt{.plt} section of the executable and thus the \gls{plt} is also at a fixed position if not compiled as \gls{pie}.
+Thus, \gls{ret2plt} attacks can still be leveraged like without \gls{aslr}.
+
+If the executable is compiled as \gls{pie}, \gls{aslr} provides the same protection as against code injection attacks, as no gadget addresses can be easily determined.
+
+\subsubsection{\glsentrylong{dep} (\glsentryshort{dep})}
+\label{subsubsec:cr-dep}
+
+The main motivation behind code reuse attacks in comparison to code injection attacks as described in \cref{sec:code-injection} is that they cannot be prevented by simple \gls{dep} measures such as the use of the \gls{nx} bit or \gls{wxorx} policies.
+As they do not insert code into memory pages marked as non-executable but only depend on memory pages already marked as executable because the latter contain library or program code, code reuse exploits are immune against \gls{dep} measures and have to be countered with other security measures.
