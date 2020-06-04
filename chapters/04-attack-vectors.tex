@@ -123,12 +123,13 @@ With the transition from \texttt{x86} to \texttt{x86\_64}, the addresses changed
 However, the Linux kernel with the default 4-level page tables only uses 47 of the address bits for userspace virtual memory addresses and sets the upper 17 bits to zero.
 With 5-level page tables, 56 bits are utilized and the upper 8 bits are set to zero \cite{Kernel2020}.
 
-This fact implies that there is always at least one \texttt{0x00} byte in an address.
+This fact implies that there is always at least one \texttt{0x00} byte in an userspace virtual memory address.
 As such a \texttt{0x00} byte also marks the end of a string, an attacker might not be able to write past such a byte if the overflow occurs in a string operation function, such as \texttt{strcpy} or \texttt{gets}.
 As the aforementioned processor architectures use little-endian byte addressing%
 	\footnote{Least significant byte first in comparison to big-endian addressing with most significant byte first}%
 , the \texttt{0x00} bytes come last and thus probably don't impose any problems when overwriting the return address, as the upper bytes are already set to \texttt{0x00} because of the original return address also being a userspace virtual memory address. 
 However, usually a \gls{sfp} also has to be overwritten before even reaching the \gls{rip} (cf. \cref{fig:stack-layout}).
+If the \gls{sfp} value cannot be overwritten with junk data because it is of importance later in the control flow, this might impose problems.
 Because of this pointer also being a userspace virtual memory address, it also has the upper bytes set to \texttt{0x00} and can cause problems when overflowing a buffer with string based functions.
 
 In an example as in \cref{lst:local-global-buffer}, this problem does not occur because \texttt{read} as a binary input function is used instead of string input functions.
@@ -151,6 +152,12 @@ However, \gls{aslr} has several weaknesses which are further described in \cref{
 \todo{Make reference more concrete than just referring to a whole chapter}
 
 In general, the combination of \gls{dep} and \gls{aslr} provides a strong defense against code injection stack buffer overflow attacks.
+
+\subsubsection{Stack canaries}
+\label{subsubsec:ci-stack-canaries}
+
+As the \gls{gcc} C compiler automatically emits code for protecting control flow information with stack canaries (cf. \cref{sec:stack-canaries}), the \gls{sfp} and \gls{rip} on the stack are protected by this security measure.
+Thus, if an adversary tries to overwrite code pointers not located in the function-local data where the overflown buffer also is located, the attack fails if the stack canary value is unknown to the attacker and they thus cannot pass the canary check in a function's epilogue.
 
 \section{Code reuse}
 \label{sec:code-reuse}

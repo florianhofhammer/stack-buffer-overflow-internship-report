@@ -127,7 +127,10 @@ Including the terminating \texttt{0x00} byte, this string copy operation thus ov
 \end{figure}
 \todo{If enough time, edit all graphics to represent 64 bit stacks}
 
-If an attacker can control the data which is copied onto the stack, they can carefully craft an input string so that they can overwrite the \gls{sfp} or \gls{rip} with attacker-controlled data and thus control where the program tries to look for function-local data (overwritten \gls{sfp}) or to continue execution (overwritten \gls{rip}) after it returns from the current function.
+If an attacker can control the data which is copied onto the stack, they%
+	\footnote{In this paper, the gender-neutral singular pronoun ``they'' and pronouns derived from it are used instead of singular ``he'', ``she'' or pronouns derived from those if no specific gender is provided for a person.}
+	\todo{Check if this is the first occurrence, otherwise move footnote to the first one}
+can carefully craft an input string so that they can overwrite the \gls{sfp} or \gls{rip} with attacker-controlled data and thus control where the program tries to look for function-local data (overwritten \gls{sfp}) or to continue execution (overwritten \gls{rip}) after it returns from the current function.
 A stack buffer overflow always occurs if a buffer just like \texttt{c} in \cref{lst:vulnerable-function} is filled with more data than it can hold.
 This does not necessarily mean that the \gls{sfp} or \gls{rip} is overwritten by a stack buffer overflow, but in most cases this is the goal of an attacker in order to divert control flow in the program's execution or manipulate a function's data.
 
