@@ -115,6 +115,9 @@ However, as already mentioned \hyperref[subsubsec:ci-via-globals]{above}, it can
 \label{subsec:ci-countermeasures}
 
 Over the last 24 years since \citeauthor{AlephOne1996}'s article \citetitle{AlephOne1996} was published, several changes in processor architecture, such as the transition from 32 bit \texttt{x86} to 64 bit \texttt{x86\_64}, as well as lots of newly introduced mitigation techniques made it difficult or even impossible to inject code into a program's address space and execute such code.
+On the one hand, the following measures can prevent arbitrary code execution through code injection.
+On the other hand, they usually cannot prevent a \gls{dos} attack against the targeted process.
+Even if it is not possible to inject code into the process's address space, a stack buffer overflow might enable an attacker to either crash the program by provoking a \gls{segfault} (cf. for example \hyperref[subsubsec:ci-data-execution-prevention]{\acl{dep}}) or shut down the process by making it detect the stack buffer overflow and exit as a reaction to the overflow (cf. for example \hyperref[subsubsec:ci-fortify-source]{\texttt{\_FORTIFY\_SOURCE}}, \hyperref[subsubsec:ci-stack-canaries]{stack canaries}).
 
 \subsubsection{64 bit addressing}
 \label{subsubsec:ci-64bit-addressing}
@@ -134,13 +137,20 @@ Because of this pointer also being a userspace virtual memory address, it also h
 
 In an example as in \cref{lst:local-global-buffer}, this problem does not occur because \texttt{read} as a binary input function is used instead of string input functions.
 
+\subsubsection{The \texttt{\_FORTIFY\_SOURCE} macro}
+\label{subsubsec:ci-fortify-source}
+
+As described in \cref{subsec:fortify-source}, the size checks conducted by setting the \texttt{\_FORTIFY\linebreak[0]\_SOURCE} value to a value higher than 0 are only activated if the value is set manually or compiler optimizations are enabled by corresponding compiler flags.
+Thus, this is not a default defense measure.
+However, when activated, the size checks at compile time and run time can successfully prevent stack buffer overflows and thus render a stack buffer overflow vulnerability basically unusable for code injection, as the program exits before the actual overflow even occurs.
+
 \subsubsection{\glsentrylong{dep} (\glsentryshort{dep})}
 \label{subsubsec:ci-data-execution-prevention}
 
 Seeing that the \gls{nx} bit is used by the Linux kernel by default (cf. \cref{sec:executable-space-protection}), \gls{dep} features prevent stack contents from being executable by default.
 For the stack being marked as executable, the \texttt{-z execstack} command line parameter has to be passed to \gls{gcc} explicitly.
 
-Thus, it is not possible to make use of code injection into a process's address space on modern \glspl{os}, as the injected code is located on memory pages marked as non-executable.
+Thus, it is not possible to make use of code injection into a process's address space on modern \glspl{os}, as the injected code is located on memory pages marked as non-executable and trying to execute code from such pages just yields a \gls{segfault}.
 This not only includes a function's local stack memory but also the memory areas where environment variables are located as well as memory regions used for storing global variables.
 
 \subsubsection{\glsentrylong{aslr} (\glsentryshort{aslr})}
@@ -362,3 +372,32 @@ If the executable is compiled as \gls{pie}, \gls{aslr} provides the same protect
 
 The main motivation behind code reuse attacks in comparison to code injection attacks as described in \cref{sec:code-injection} is that they cannot be prevented by simple \gls{dep} measures such as the use of the \gls{nx} bit or \gls{wxorx} policies.
 As they do not insert code into memory pages marked as non-executable but only depend on memory pages already marked as executable because the latter contain library or program code, code reuse exploits are immune against \gls{dep} measures and have to be countered with other security measures.
+
+\section*{ToDo}
+
+\begin{itemize}
+	\item{
+		\gls{got} hijacking / overwriting (space constraints $\Rightarrow$ doesn't need as much space as shellcode or \gls{rop} chains)
+	}
+	\item{
+		\gls{aslr} brute-force $\Rightarrow$ on \texttt{x86\_64} difficult because of too much entropy
+	}
+	\item{
+		Return into non-radnomized memory (\gls{aslr} bypass) ret2text, ret2bss, ret2data: on non-\gls{pie}
+	}
+	\item{
+		Pointer redirection: string or function pointers
+	}
+	\item{
+		Integer overflows $\Rightarrow$ signedness or wrong width (e.g. \texttt{int} assignment to \texttt{char})
+	}
+	\item{
+		Code injection: ret2esp, ret2ret, ret2pop, ret2eax
+	}
+	\item{
+		Destructor overwriting ret2dtors
+	}
+	\item{
+		Stack canaries: clone-probing to defeat canaries \textbf{and} \gls{aslr}
+	}
+\end{itemize}

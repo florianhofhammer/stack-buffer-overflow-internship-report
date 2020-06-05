@@ -118,7 +118,7 @@ Such protections are often referred to as \emph{executable space protection} or 
 
 On 64 bit machines, memory pages are marked with specific flags signaling the permissions for the given memory page.
 Those flags include a \gls{nx} bit (marketed as \gls{xd} bit by Intel) \cite[801\psq]{Bryant2011}.
-If set to 1, this bit informs the processor that the marked memory page should not contain executable code and that accesses to such pages trying to execute code should throw an exception (segmentation fault).
+If set to 1, this bit informs the processor that the marked memory page should not contain executable code and that accesses to such pages trying to execute code should throw an exception (\acl{segfault}).
 On 32 bit machines, such a bit was only emulated in software instead of implemented in hardware, as it is part of the \gls{pae} enabling 32 bit machines to use more than 4 GiB of memory \cite{Molnar2004}.
 The Linux kernel makes use of the \gls{nx} bit by default since \citeyear{Cook2010} \cite{Cook2010}.
 
