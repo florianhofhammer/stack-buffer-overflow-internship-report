@@ -162,7 +162,7 @@ Thus, if an adversary tries to overwrite code pointers not located in the functi
 \section{Code reuse}
 \label{sec:code-reuse}
 
-In \cref{subsec:cr-ret2libc,subsec:cr-rop,subsec:cr-jop,subsec:cr-cop} we first present different approaches for code reuse attacks.
+In \cref{subsec:cr-ret2libc,subsec:cr-rop,subsec:cr-jop,subsec:cr-cop,subsec:cr-srop} we first present different approaches for code reuse attacks.
 They all have in common that they reuse existing code in memory instead of injecting code into the attacked process's address space.
 Thus, such attacks can't be prevented by marking user-controlled memory pages such as those containing the stack memory as non-executable.
 Nevertheless, approaches on how to mitigate such attacks exist and are described in \cref{subsec:cr-countermeasures}.
@@ -323,6 +323,20 @@ Thus, the intra stack pivot gadget has to add to the stack pointer a multiple of
 Such gadgets are useful if no strong trampoline gadgets can be found in the process's address space (i.e. in the executable binary or the binaries of the linked libraries) or for compensating stack manipulation by \texttt{push} instructions and instructions with side-effects similar to \texttt{push} instructions in general.
 
 Using strong trampoline gadgets and intra stack pivot gadgets, attacks similar to \gls{jop} attacks based on trampoline or dispatcher gadgets can be launched purely based on gadgets ending with \texttt{call} instructions instead of \texttt{jmp} instructions \cite{Sadeghi2018}.
+
+\subsection{\glsentrylong{srop} (\glsentryshort{srop})}
+\label{subsec:cr-srop}
+
+In addition to the previous code reuse approaches which were strongly based on chaining gadgets to manipulate the \acs{cpu} context, \citeauthor{Bosman2014} propose their \gls{srop} approach based on the signal handling behavior of UNIX-based and UNIX-like systems and as such also Linux.
+When a process has a pending signal, it stores the current \acs{cpu} context including register contents, flags, etc. on the stack as soon as it transitions back to user-mode, for example by returning from a \gls{syscall} (kernel mode) or being rescheduled onto a \acs{cpu}.
+Afterwards, the signal handler corresponding to the received signal is run.
+When this signal handler returns, a \texttt{sigreturn} \gls{syscall} is issued which restores the process's \acs{cpu} context from the stack in order to continue execution just as the process was supposed to \cite{Bosman2014,Kerrisk2020a}.
+
+If an adversary can exploit a stack buffer overflow vulnerability by controlling the contents of the \texttt{rax} register to set the \gls{syscall} number to 15 \cite[\texttt{arch/x86/entry/\linebreak[0]syscalls/syscall\_64.tbl}]{LKD2020} and then issue a \gls{syscall}, the contents of the stack at the current stack pointer location are interpreted as a \acs{cpu} context and the context is restored.
+The adversary thus then completely controls the system behavior with a single \gls{syscall} if they set up a \texttt{sigreturn} frame on the stack beforehand, as they control all of the processor registers including the stack pointer or the instruction pointer as well as flags and other context information.
+
+This approach is classified as a code reuse attack because it needs a gadget invoking a \gls{syscall} to trigger the \texttt{sigreturn} behavior.
+The \gls{srop} approach facilitates code reuse exploits in comparison to standard code reuse attacks based on gadget chaining, as no gadgets to specifically setup the registers (apart from \texttt{rax} for the first \gls{syscall}) are needed \cite{Bosman2014}.
 
 \subsection{Difficulties and countermeasures}
 \label{subsec:cr-countermeasures}
