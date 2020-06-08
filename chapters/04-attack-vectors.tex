@@ -48,34 +48,34 @@ The processor then tries to decode the data on the stack as processor instructio
 Such an attack is very hard to achieve correctly, as the return address written onto the stack has to match the buffer's address exactly.
 An offset of the return address to the buffer's address of a single byte can already render the shellcode unusable, as the instructions are decoded incorrectly by the processor.
 Thus, a common technique to improve the reliability of such an exploit is to include a so-called \emph{\gls{nop} sled} into the user-controlled input which is used to overflow the vulnerable buffer on the stack.
-A \gls{nop} sled consists of binary encoded \acrshort{nop} assembly instructions (byte \texttt{0x90} on \texttt{x86/x86\_64}).
+A \gls{nop} sled consists of binary encoded \acs{nop} assembly instructions (byte \texttt{0x90} on \texttt{x86/x86\_64}).
 This instruction tells the processor to do nothing during the cycle where this instruction is executed.
-If a lot of such instructions are placed in front of the shellcode into the buffer, the return address does not necessarily have to point exactly to the start of the buffer or the start of the shellcode but it is sufficient to point the return address to a location somewhere in the \acrshort{nop} sled.
-When returning into the \acrshort{nop} sled, the processor then executes several \gls{nop} instructions and progresses on the stack until it reaches the shellcode.
+If a lot of such instructions are placed in front of the shellcode into the buffer, the return address does not necessarily have to point exactly to the start of the buffer or the start of the shellcode but it is sufficient to point the return address to a location somewhere in the \acs{nop} sled.
+When returning into the \acs{nop} sled, the processor then executes several \gls{nop} instructions and progresses on the stack until it reaches the shellcode.
 
-It is also possible to place the \acrshort{nop} sled after the shellcode on the stack instead of in front of the shellcode.
-If the length of the shellcode and the \acrshort{nop} sled is known, a relative jump can be added to the end of the \acrshort{nop} sled with the negative offset for the relative jump being the combined length of the shellcode and the \acrshort{nop} sled.
-As shown in \cref{fig:stack-overflow-nop-sled}, such a \acrshort{nop} sled can even extend over the overwritten return address with the help of a second relative jump in order to bypass size restrictions given by the size of the buffer.
+It is also possible to place the \acs{nop} sled after the shellcode on the stack instead of in front of the shellcode.
+If the length of the shellcode and the \acs{nop} sled is known, a relative jump can be added to the end of the \acs{nop} sled with the negative offset for the relative jump being the combined length of the shellcode and the \acs{nop} sled.
+As shown in \cref{fig:stack-overflow-nop-sled}, such a \acs{nop} sled can even extend over the overwritten return address with the help of a second relative jump in order to bypass size restrictions given by the size of the buffer.
 
 \begin{figure}[htb]
 	\centering
 	\includegraphics[width=0.3\textwidth]{figures/NopSled}
-	\caption{Stack layout after a stack buffer overflow with shellcode and \acrshort{nop} sled \cite{Lynn2007c} (cf. \cref{fig:stack-layout})}
+	\caption{Stack layout after a stack buffer overflow with shellcode and \acs{nop} sled \cite{Lynn2007c} (cf. \cref{fig:stack-layout})}
 	\label{fig:stack-overflow-nop-sled}
 \end{figure}
 
-In general, a long \acrshort{nop} sled is desired by an attacker, as it becomes easier to guess an address inside of the \acrshort{nop} sled \cite{AlephOne1996}.
+In general, a long \acs{nop} sled is desired by an attacker, as it becomes easier to guess an address inside of the \acs{nop} sled \cite{AlephOne1996}.
 
 \subsubsection{Code injection via environment variables}
 \label{subsubsec:ci-via-env-variable}
 
-If it is desired to have a contiguous block of shellcode with maybe a \acrshort{nop} sled in front of it without the necessity of relative jumps, it might be a problem to have the exploit code fit into the vulnerable buffer before the overwritten return address, as the buffer might be too small to store the whole input.
-In such cases, the actual exploit code (\acrshort{nop} sled and shellcode) can be put into an environment variable on the system which is being attacked if the attacker has the necessary access to the system to set environment variables.
+If it is desired to have a contiguous block of shellcode with maybe a \acs{nop} sled in front of it without the necessity of relative jumps, it might be a problem to have the exploit code fit into the vulnerable buffer before the overwritten return address, as the buffer might be too small to store the whole input.
+In such cases, the actual exploit code (\acs{nop} sled and shellcode) can be put into an environment variable on the system which is being attacked if the attacker has the necessary access to the system to set environment variables.
 There are slight offsets depending on the contents of other environment variables, but an environment variable generally can be found at the same address in each started process, as environment variables are loaded at the bottom of the stack \cite[731\psq]{Bryant2011}.
 This allows to retrieve the location at which an environment variable will be located in the attacked process with the help of a second program (cf. \cref{lst:getenvaddress}).
 
 Thus, it is possible to point the return address into an environment variable instead of the overflown buffer.
-If the return address successfully points either directly to the shellcode or into the \acrshort{nop} sled inside the environment variable, the shellcode is executed exactly as in the previous case where it was put into the user-controlled overflown buffer.
+If the return address successfully points either directly to the shellcode or into the \acs{nop} sled inside the environment variable, the shellcode is executed exactly as in the previous case where it was put into the user-controlled overflown buffer.
 
 A restriction of this approach is that environment variables are only mapped into the processes address space when the process is started.
 Thus, shellcode cannot be injected into already running programs with the help of environment variables but only into programs started after setting the environment variable.
@@ -91,7 +91,7 @@ If there is the possibility to place data in a global buffer before overflowing 
 This greatly eases finding the target address in comparison to stack addresses, as global variables are located in the \texttt{.bss} (uninitialized global variables) or \texttt{.data} (initialized global variables) sections in an \gls{elf} executable and thus are loaded at specific memory locations as seen in \cref{lst:local-global-buffer-disassembly,fig:memory-layout}.
 In the given example, the global buffer is always located at the address \texttt{0x0000000000404080}.
 
-\lstinputlisting[language=C,float=ht,caption={C program reading data from \texttt{\acrshort{stdin}} into a global and a local buffer},label={lst:local-global-buffer}]{code/local-global-buffer.c}
+\lstinputlisting[language=C,float=ht,caption={C program reading data from \texttt{\acs{stdin}} into a global and a local buffer},label={lst:local-global-buffer}]{code/local-global-buffer.c}
 
 \begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:local-global-buffer} with \texttt{gcc -o local-global-buffer local-global-buffer.c -no-pie}, retrieved with \texttt{objdump -D local-global-buffer}}, label={lst:local-global-buffer-disassembly}]
         ...
@@ -109,7 +109,7 @@ Disassembly of section .bss:
 \label{subsubsec:ci-into-arbitrary-buffer}
 
 Shellcode can also be read into any local buffer on the stack that is user-controlled before overflowing the vulnerable buffer.
-However, as already mentioned \hyperref[subsubsec:ci-via-globals]{above}, it can be difficult to locate such a buffer on the stack even when using a \acrshort{nop} sled.
+However, as already mentioned \hyperref[subsubsec:ci-via-globals]{above}, it can be difficult to locate such a buffer on the stack even when using a \acs{nop} sled.
 
 \subsection{Difficulties and countermeasures}
 \label{subsec:ci-countermeasures}
@@ -194,7 +194,7 @@ The backwards arrangement of address and string bytes is due to the little-endia
 \begin{figure}[htb]
 	\centering
 	\includegraphics[width=0.8\textwidth]{figures/ret2libc}
-	\caption{Stack layout after a stack buffer overflow with \acrshort{ret2libc} approach (own graphical representation) (cf. \cref{fig:stack-layout})}
+	\caption{Stack layout after a stack buffer overflow with \acs{ret2libc} approach (own graphical representation) (cf. \cref{fig:stack-layout})}
 	\label{fig:ret2libc}
 \end{figure}
 
@@ -255,17 +255,17 @@ A simple example for such a control flow is shown in \cref{fig:jop-dispatcher}.
 	\begin{subfigure}[t]{0.8\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{figures/jop-dispatcher}
-		\caption{Exemplary \gls{jop} control flow with a dispatcher gadget (own graphical representation based on figure 3 from \cite{Bletsch2011})}
+		\caption{Exemplary \acs{jop} control flow with a dispatcher gadget (own graphical representation based on figure 3 from \cite{Bletsch2011})}
 		\label{fig:jop-dispatcher}
 		\vspace*{1em}
 	\end{subfigure}
 	\begin{subfigure}[t]{0.8\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{figures/jop-trampoline}
-		\caption{Examplary \gls{jop} control flow with a trampoline gadget (own graphical representation based on figure 1 from \cite{Checkoway2010})}
+		\caption{Examplary \acs{jop} control flow with a trampoline gadget (own graphical representation based on figure 1 from \cite{Checkoway2010})}
 		\label{fig:jop-trampoline}
 	\end{subfigure}
-	\caption{Control flow of dispatcher and trampoline based \gls{jop} exploits. Note the difference between indirect and direct jump in the dispatcher and trampoline gadget.}
+	\caption{Control flow of dispatcher and trampoline based \acs{jop} exploits. Note the difference between indirect and direct jump in the dispatcher and trampoline gadget.}
 	\label{fig:jump-oriented-programming}
 \end{figure}
 

@@ -152,7 +152,7 @@ It is, however, important to note that such pointer mangling is not automaticall
 A \gls{pie} or \gls{pic} is an executable that was compiled to be loaded into virtual memory at an address chosen by the \gls{os} kernel.
 Instead of being loaded at a fixed address and containing fixed addresses for function calls or jumps, the binary executable contains offsets and can thus be loaded at arbitrary memory addresses.
 
-On 64-bit Linux, \gls{elf} executables compiled as non-\acrshort{pie} are by default loaded at the base address \texttt{0x0000000000400000}.
+On 64-bit Linux, \gls{elf} executables compiled as non-\acs{pie} are by default loaded at the base address \texttt{0x0000000000400000}.
 Compiled as \gls{pie}, they are loaded at the base address \texttt{0x0000555555554000} if \gls{aslr} is disabled.
 Thus, for an attacker to be able to determine addresses which might be usable as target addresses when overwriting control flow information, only the base address changes but the general approach stays the same.
 The real benefits of \gls{pic} come into play when combined with \gls{aslr}.
@@ -181,3 +181,49 @@ Thus, overflowing a stack buffer with the goal of overflowing for example the re
 By default, the instructions for inserting a stack canary and checking the canary for integrity are emitted by the \gls{gcc} C compiler automatically for functions that call the \texttt{alloca} function, have local buffers larger than 8 bytes or reference a local frame address \cite{FSF2019}, as the \texttt{-fstack-protector-strong} flag is set by default%
 	\footnote{Tested on \gls{gcc} 9.3.0 by invoking \texttt{gcc -v -Q test.c}, where \texttt{test.c} is an arbitrary but error-free C source code file}%
 .
+
+\section{\glsentrylong{relro} (\glsentryshort{relro})}
+\label{sec:relro}
+
+Dynamically linked \gls{elf} binaries use the \gls{plt} and \gls{got} sections to resolve functions and linked global variables.
+The addresses of such dynamically linked functions and variables by default are resolved by \emph{lazy binding} which means that they are only resolved as soon as they are needed the first time.
+The \gls{got} first only contains pointers to the dynamic linker.
+Only when the function or variable corresponding to a \gls{got} entry is first referenced in the program, the dynamic linker is invoked by those pointers (cf. \cref{fig:lazy-binding-1}).
+The linker then resolves the actual address and overwrites the \gls{got} entry with said address.
+On further calls to the same function or references to the same variable, the address is thus already known and the dynamic linker doesn't have to be invoked again \cites{Bendersky2011}[645\psqq]{Federico2015}{Sidhpurwala2019} (cf. \cref{fig:lazy-binding-2}).
+
+The \gls{got} has to be writable for the dynamic linker to write resolved addresses into the corresponding entries.
+This allows an attacker who can write to the \gls{got} to call arbitrary functions by overwriting function pointers of other functions \cite{Sidhpurwala2019}.
+For example, overwriting the \gls{got} entry of \texttt{puts} with the address of \texttt{system} calls \texttt{system} with the provided string argument of \texttt{puts} on any further \texttt{puts} invocation.
+
+\gls{relro} tries to prevent such attacks.
+The idea behind \gls{relro} is to reorder \gls{elf} sections so that the sections needed for dynamic linking and especially the \gls{got} section are located at lower memory addresses than the \texttt{.data} and \texttt{.bss} sections.
+Those sections might contain buffers vulnerable to buffer overflows and thus allow overwriting \gls{got} entries if the \gls{got} section is located directly after said sections at a higher memory address%
+	\footnote{
+		Such a section reordering is described in \cite[183]{Klein2011}.
+		However, compiling with \gls{gcc} nowadays already emits the sections so that internal data sections like the \gls{got} are located in memory in front of data sections like \texttt{.data} even if \gls{relro} is explicitly disabled (tested with \texttt{gcc -o test test.c -z norelro} and \texttt{readelf -S test} for an arbitrary, error-free C source file that references dynamically loaded functions such as \texttt{printf}).
+	}%
+.
+In addition to such relocations, sections can also be marked as read-only to prevent an attacker from modifying the contained data.
+If \emph{full \gls{relro}} is enabled, any referenced external functions or variables are resolved on program startup, their addresses are written into the corresponding sections and the sections are then marked as read-only before handing control to the actual program code.
+Any attempt to overwrite for example \gls{got} entries thus only yields a \gls{segfault}, as write access to the corresponding memory regions is disabled.
+However, program startup is slowed down by resolving all functions and variables even if they might not be needed because they are part of a control flow path that is never executed in a specific instantiation of the program in question \cites[645\psqq]{Federico2015}[183\psqq]{Klein2011}{Sidhpurwala2019}.
+
+\begin{figure}[htb]
+	\centering
+	\begin{subfigure}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/lazy-binding-1}
+		\caption{Function call on first call (own representation based on \cite{Bendersky2011})}
+		\label{fig:lazy-binding-1}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/lazy-binding-2}
+		\caption{Function call on subsequent calls (own representation based on \cite{Bendersky2011})}
+		\label{fig:lazy-binding-2}
+	\end{subfigure}
+	\caption{Function call procedure with \acs{plt} and \acs{got} (pseudo-code based on \texttt{x86(\_64)} assembly)}
+	\label{fig:lazy-binding}
+\end{figure}
