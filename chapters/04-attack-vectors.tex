@@ -3,9 +3,10 @@
 
 In this chapter, we describe several methods to gain control over a program vulnerable to stack buffer overflow attacks.
 In each of the sections, it is assumed that none of the measures from \cref{chp:current-defense-mechanisms} are enabled or active unless otherwise stated.
+Additionally, it is assumed that an adversary has access to the executable binary which is attacked and can thus statically analyze it.
 
-In \cref{sec:code-injection,sec:code-reuse} we present the two basic types of stack buffer overflow attacks, \nameref{sec:code-injection} and \nameref{sec:code-reuse}.
-As their basic approaches are easily mitigated by different defense mechanisms presented in \cref{chp:current-defense-mechanisms}, the successive sections then present several possibilities on how to bypass certain security measures.
+In \cref{sec:code-injection,sec:code-reuse} we present the two basic types of stack buffer overflow attacks, \crtlnameref{sec:code-injection} and \crtlnameref{sec:code-reuse}.
+As their basic approaches are easily mitigated by different defense mechanisms presented in \cref{chp:current-defense-mechanisms}, the successive sections then present additional attack techniques and several possibilities on how to bypass certain security measures.
 
 \todo{
  Differentiate between RIP and SFP overwriting? 
@@ -372,6 +373,34 @@ If the executable is compiled as \gls{pie}, \gls{aslr} provides the same protect
 
 The main motivation behind code reuse attacks in comparison to code injection attacks as described in \cref{sec:code-injection} is that they cannot be prevented by simple \gls{dep} measures such as the use of the \gls{nx} bit or \gls{wxorx} policies.
 As they do not insert code into memory pages marked as non-executable but only depend on memory pages already marked as executable because the latter contain library or program code, code reuse exploits are immune against \gls{dep} measures and have to be countered with other security measures.
+
+\section{\glsentryshort{got} hijacking}
+\label{sec:got-hijacking}
+
+As mentioned in \cref{sec:relro} concerning the \gls{relro} security measure, \gls{got} entries without protection through \gls{relro} and located right after the user-controlled data sections in memory could be overwritten by an attacker exploiting a buffer overflow vulnerability with a buffer located in said data sections (\texttt{.bss} or \texttt{.data}).
+As this paper is referring specifically to stack based buffer overflows, such attacks are out of scope and will not be analyzed further.
+However, stack buffer overflow vulnerabilities can still allow an adversary to divert control flow by precisely overwriting \gls{got} entries as presented in the rest of this section.
+For this purpose it is assumed that \gls{dep} is enabled and it is thus not possible for an attacker to just put shellcode onto the stack and execute that shellcode.
+Additionally, \gls{aslr} and stack canaries are enabled.
+For the former, the restriction applies that the attacked program is not compiled as \gls{pie} and that parts of the process's address space are thus located at predictable addresses.
+
+As stack canaries are present in an assumed execution of such a program with a stack buffer overflow vulnerability, it is not possible to leverage powerful code reuse attacks such as \gls{rop} by overwriting the return address without somehow bypassing the stack canary check, for example by leaking the stack canary beforehand.
+In addition, with \gls{aslr} enabled, it is difficult to successfully launch a \gls{ret2libc} attack or reuse library code for \gls{rop}, \gls{jop} or \gls{cop} gadgets, as the library addresses are not known to an adversary and the executable itself might not contain enough gadgets.
+An attacker might therefore be limited to overwriting function-local data which is not covered by the \gls{ssp}.
+Such data can include arbitrary pointers which can be overwritten so that subsequent function calls operating on such pointers might manipulate the \gls{got} and thus divert control flow based on the function call procedure using \gls{plt} and \gls{got} as described in \cref{sec:relro,fig:lazy-binding}.
+
+\lstinputlisting[language=C,float=ht,caption={C program reading from \texttt{\acs{stdin}} into a function-local buffer},label={lst:got-hijacking}]{code/got-hijacking.c}
+
+For example, the C program in \cref{lst:got-hijacking} contains an obvious stack buffer overflow vulnerability.
+It reads up to 16 bytes from \gls{stdin}, whereas the destination buffer is only 8 bytes in size.
+This means that the 8 bytes in memory after the buffer can be overwritten with arbitrary user-controlled data.
+As those 8 bytes contain the pointer \texttt{char *ptr}, an adversary can control the memory destination of the second \texttt{read} function call if they precisely overwrite it with the first call to \texttt{read}.
+Because the executable is compiled as non-\acs{pie}, the addresses of the \gls{plt} and \gls{got} sections are fixed and not subject to memory address randomization through \gls{aslr}.
+Because of the function \texttt{function}, \texttt{system} has an entry in the \gls{plt}.
+Overwriting \texttt{printf}'s \gls{got} entry with the address of \texttt{system}'s \gls{plt} entry during the second call to \texttt{read} causes the program to execute \texttt{system} instead of \texttt{printf} when \texttt{printf} is called the second time.
+The resulting function call is thus \texttt{system("Array ...")} (argument string shortened) which causes the program to execute ``Array'' as a shell command.
+If the attacker can then place an executable such as a shell script with the filename ``Array'' on the target system so that it is reachable by the process, any code contained in that file is executed by the shell (cf. \cite[15\psq]{Mueller2008}).
+
 
 \section*{ToDo}
 

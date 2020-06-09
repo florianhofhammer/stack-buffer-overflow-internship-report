@@ -244,12 +244,11 @@ block=space,        % Add a little spacing inside bibliography entries
 \makeglossaries
 \GlsSetQuote{+}
 
-% Intelligent cross-referencing
-% Note: Must be loaded at end of preamble (esp. after hyperref)
-\usepackage[nameinlink,noabbrev]{cleveref}
-
+% Footnote enhancements
 % Don't reset footnote numbering for every chapter
 \counterwithout{footnote}{chapter}
+% Don't split footnote over several pages
+\interfootnotelinepenalty=10000 
 
 % Enable emergency line breaks to prevent over-full boxes
 \emergencystretch=1em
@@ -261,6 +260,13 @@ block=space,        % Add a little spacing inside bibliography entries
 \usepackage{pifont}
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\xmark}{\ding{55}}
+
+% Additional cross referencing tools, like e.g. lowercase nameref
+\usepackage{crossreftools}
+
+% Intelligent cross-referencing
+% Note: Must be loaded at end of preamble (esp. after hyperref)
+\usepackage[nameinlink,noabbrev]{cleveref}
 
 %%% Local Variables:
 %%% mode: latex
