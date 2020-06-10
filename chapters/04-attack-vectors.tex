@@ -384,6 +384,9 @@ For this purpose it is assumed that \gls{dep} is enabled and it is thus not poss
 Additionally, \gls{aslr} and stack canaries are enabled.
 For the former, the restriction applies that the attacked program is not compiled as \gls{pie} and that parts of the process's address space are thus located at predictable addresses.
 
+\subsection{Operating principle}
+\label{subsec:got-operating-principle}
+
 As stack canaries are present in an assumed execution of such a program with a stack buffer overflow vulnerability, it is not possible to leverage powerful code reuse attacks such as \gls{rop} by overwriting the return address without somehow bypassing the stack canary check, for example by leaking the stack canary beforehand.
 In addition, with \gls{aslr} enabled, it is difficult to successfully launch a \gls{ret2libc} attack or reuse library code for \gls{rop}, \gls{jop} or \gls{cop} gadgets, as the library addresses are not known to an adversary and the executable itself might not contain enough gadgets.
 An attacker might therefore be limited to overwriting function-local data which is not covered by the \gls{ssp}.
@@ -401,12 +404,49 @@ Overwriting \texttt{printf}'s \gls{got} entry with the address of \texttt{system
 The resulting function call is thus \texttt{system("Array ...")} (argument string shortened) which causes the program to execute ``Array'' as a shell command.
 If the attacker can then place an executable such as a shell script with the filename ``Array'' on the target system so that it is reachable by the process, any code contained in that file is executed by the shell (cf. \cite[15\psq]{Mueller2008}).
 
+\subsection{Difficulties and countermeasures}
+\label{subsec:got-countermeasures}
+
+As for the previous sections, the general difficulties of a stack buffer overflow exploit such as the impossibility of writing multiple string-ending characters with string-based functions such as \texttt{strcpy} still apply.
+Additional problems and problems specific to the \gls{got} hijacking approach are described in the rest of this section.
+
+\subsubsection{\glsentrylong{aslr} (\glsentryshort{aslr})}
+\label{subsubsec:got-aslr}
+
+We already mentioned that the executable should not be compiled as \gls{pie} before describing the \crtlnameref{subsec:got-operating-principle} of a \gls{got} hijacking attack.
+Without this, the location in memory of the \gls{got} is randomized and thus unlikely to find for an adversary without leaking \gls{aslr} information beforehand and thus effectively rendering \gls{aslr} useless.
+
+In addition, \gls{aslr} restricts an adversary to the functions used in the attacked executable as they are listed in the \gls{plt} and their \gls{plt} addresses can thus be used as a target address when overwriting a \gls{got} entry.
+Without \gls{aslr} enabled, an adversary could also know any library addresses and thus overwrite \gls{got} entries not with the addresses of \gls{plt} entries but with the addresses of arbitrary library functions.
+This would significantly increase the impact of a stack buffer overflow vulnerability that allows \gls{got} hijacking as the attacker's function arsenal significantly increases in size.
+In such a situation, code reuse attacks such as \gls{rop} attacks would also become feasible and powerful, as libraries usually provide a huge range of functions and gadgets because of their size.
+However, security measures such as stack canaries can still prevent an adversary from overwriting code pointers such as a function's return address and \gls{got} hijacking as described in \cref{subsec:got-operating-principle} may thus still be the means of choice for successfully leveraging attacker-controlled code execution.
+
+\subsubsection{Variable reordering}
+\label{subsubsec:got-variable-reordering}
+
+Depending on security related compiler flags, stack alignment and other options, \gls{gcc} may reorder the variables on the stack and a function's variables might not be positioned on the stack as declared in the code.
+This behavior can be overridden by using a C \texttt{struct} as shown in \cref{lst:got-hijacking}.
+
+If the compiler reorders variables so that a vulnerable buffer is at the bottom of the stack frame, pointers that could be overwritten to point into the \gls{got} are located at lower memory addresses and can thus not be manipulated by overflowing said buffer.
+\gls{got} hijacking attacks thus do not present a generally exploitable mechanism but heavily depend on the order of variables on the stack.
+For general buffer overflow attacks aiming to overwrite the \gls{sfp} or \gls{rip} when stack canaries are absent or the correct canary value is known to the attacker, the order of variables on the stack is usually not of high importance, as the adversary can include more padding if additional variables are located between the buffer and the target to overflow.
+Such padding of course still depends on whether there are restrictions in overflow size, for example introduced by the parameter giving the number of bytes in a \texttt{read} function call like in \cref{lst:got-hijacking}.
+
+\subsubsection{\glsentrylong{relro} (\glsentryshort{relro})}
+\label{subsubsec:got-relro}
+
+As the part of the \gls{plt} which is responsible for storing functions' addresses (\texttt{.got.plt}) is still writable with partial \gls{relro} enabled, \gls{got} hijacking as described in this section can only be prevented by enabling full \gls{relro}.
+As described in \cref{sec:relro}, this incurs a startup penalty, as all symbols have to be resolved before marking the \gls{got} as read-only.
+However, if full \gls{relro} is enabled, \gls{got} hijacking attacks are impossible because trying to overwrite a value in the \gls{got} only results in a \gls{segfault}.
+Therefore, full \gls{relro} is an effective measure to prevent such attacks but it has to be evaluated thoroughly by a program's developers how big resulting startup delays are and whether such delays can be tolerated or not.
+
 
 \section*{ToDo}
 
 \begin{itemize}
 	\item{
-		\gls{got} hijacking / overwriting (space constraints $\Rightarrow$ doesn't need as much space as shellcode or \gls{rop} chains)
+		\gls{got} hijacking / overwriting (space constraints $\Rightarrow$ doesn't need as much space as shellcode or \gls{rop} chains) \cmark
 	}
 	\item{
 		\gls{aslr} brute-force $\Rightarrow$ on \texttt{x86\_64} difficult because of too much entropy
