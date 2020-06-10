@@ -159,10 +159,14 @@ This not only includes a function's local stack memory but also the memory areas
 
 Even if user-writable memory regions are marked as executable, for example because a \gls{jit} compiler needs to store generated code, \gls{aslr} can make it extraordinarily harder for an attacker to overwrite code pointers such as the \gls{rip} or function pointers with addresses pointing to valid memory areas and especially pointing to the user-generated shellcode or into a \gls{nop} sled.
 
-However, \gls{aslr} has several weaknesses which are further described in \cref{chp:defense-mechanism-improvements} and where bypass approaches are presented in following sections.
+Still, enabling \gls{aslr} cannot guarantee to prevent code injection attacks.
+If \gls{aslr} is enabled but the executable is not compiled as \gls{pie}, sections in the \gls{elf} binary such as \texttt{.bss} or \texttt{.data} are still located at fixed addresses and can thus be used as a target as described in the section about \crtlnameref{subsubsec:ci-via-globals}.
+
+Even if \gls{aslr} is enabled on the system under attack and the executable was compiled as \gls{pie} beforehand, \gls{aslr} just lowers the chance of an attacker to hit the right address but does not prevent it for sure.
+The stochastic approach of \gls{aslr} and other weaknesses which are further described in \cref{chp:defense-mechanism-improvements} and where bypass approaches are presented in following sections stil allow for successful code injection attacks.
 \todo{Make reference more concrete than just referring to a whole chapter}
 
-In general, the combination of \gls{dep} and \gls{aslr} provides a strong defense against code injection stack buffer overflow attacks.
+Nevertheless, the combination of \gls{dep} and \gls{aslr} in general provides a strong defense against code injection stack buffer overflow attacks by combining memory addresses that are hard to get right with non-executable memory regions.
 
 \subsubsection{Stack canaries}
 \label{subsubsec:ci-stack-canaries}
@@ -441,6 +445,33 @@ As described in \cref{sec:relro}, this incurs a startup penalty, as all symbols 
 However, if full \gls{relro} is enabled, \gls{got} hijacking attacks are impossible because trying to overwrite a value in the \gls{got} only results in a \gls{segfault}.
 Therefore, full \gls{relro} is an effective measure to prevent such attacks but it has to be evaluated thoroughly by a program's developers how big resulting startup delays are and whether such delays can be tolerated or not.
 
+\section{Address-invariant code injection}
+\label{sec:address-invariant-code-injection}
+
+In \cref{subsec:ci-countermeasures}, we mentioned \gls{aslr} as an important measure to prevent code injection attacks, as \gls{aslr} makes it substantially harder for an attacker to return into previously injected shellcode on the stack, in environment variables or at other locations.
+However, code injection approaches exist which make use of a stack buffer overflow vulnerability that do not depend on the target buffer's address.
+The approaches presented in the following sections all rely on not only placing shellcode onto the stack but also jumping to that shellcode by making use of gadgets located in the executable.
+They were presented by \citeauthor{Kotler2005} in \citeyear{Kotler2005} and became known as ``stack juggling methods'' \cites{Kotler2005}[10]{Mueller2008}.
+As those methods partially rely on gadgets, they make use of both code injection and code reuse techniques.
+Because the addresses of gadgets are also affected by \gls{aslr} just like the shellcode addresses, it is assumed that in the following sections any vulnerable executables are not compiled as \gls{pie} and that they therefore provide code which might contain useful gadgets at known addresses.
+
+\subsection{ret2ret}
+\label{subsec:aici-ret2ret}
+
+The \emph{ret2ret} approach is based on exploiting pointers already located in stack frames which are located higher in the call stack.
+The idea is to place shellcode into the vulnerable buffer before reaching the return address to overwrite and to overflow the current function's return address and any stack space between the return address and such a pointer with the address of a gadget that is only composed of a \texttt{ret} instruction.
+When the overflow occurs because of a string-based function such as \texttt{strcat} or \texttt{strcpy}, the function always appends a string-terminating \texttt{0x00} byte at the end of the string.
+Thus, if the addresses are correctly aligned to the stack and end right before the desired pointer, the latter's least significant byte (little endian on \texttt{x86(\_64)}) is overwritten with such a \texttt{0x00} byte.
+As the stack grows towards lower memory addresses, the pointer then points to a position higher on the stack if the least significant byte wasn't already \texttt{0x00} before overwriting it.
+With the correct offset of the buffer containing the shellcode to such a pointer, the pointer might now point into the shellcode buffer which ideally has a \acs{nop} sled allowing for higher success probabilities.
+An exemplary stack layout for such an attack is shown in \cref{fig:ret2ret}.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=0.7\textwidth]{figures/ret2ret}
+	\caption{Stack layout before and after a stack buffer overflow with ret2ret approach (own graphical representation based on figure 16 in \cite[10]{Mueller2008})}
+	\label{fig:ret2ret}
+\end{figure}
 
 \section*{ToDo}
 
