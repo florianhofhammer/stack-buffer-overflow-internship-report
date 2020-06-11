@@ -164,6 +164,10 @@ block=space,        % Add a little spacing inside bibliography entries
 % Use main body font for URLs in bibliography
 \urlstyle{same}
 
+% Allow linebreaks in URLs to prevent really ugly overfull hboxes
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
+
 
 % ----------------------------------------------------
 % Localization / translations

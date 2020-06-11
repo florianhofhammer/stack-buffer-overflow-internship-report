@@ -501,6 +501,33 @@ Thus, if an adversary can pass the desired shellcode as an argument to the proce
 \Citeauthor{Kotler2005} and \citeauthor{Mueller2008} both describe the ret2pop approach based on the \texttt{x86} calling convention and thus reuse function arguments \cites{Kotler2005}[11\psq]{Mueller2008}.
 As described above, this approach might not work on \texttt{x86\_64} and thus might have to be adapted to use other pointers such as \texttt{argv} argument pointers.
 
+\subsection{ret2rax}
+\label{subsec:aici-ret2rax}
+
+\emph{ret2rax} is the 64 bit version of the \emph{ret2eax} approach described by \citeauthor{Kotler2005} for 32 bit \texttt{x86} systems \cite{Kotler2005}.
+The different naming (suffix \emph{rax} instead of \emph{eax}) is derived from the different register naming on \texttt{x86} and \texttt{x86\_64} with the \texttt{eax} and \texttt{rax} registers, respectively.
+
+The ret2rax approach is based on the behavior that many memory manipulation functions in C such as \texttt{strcpy} for string copying or \texttt{memcpy} for binary data copying return a pointer to the manipulated buffer or the destination buffer of a copy operation \cite{Kerrisk2020b,Kerrisk2020c}.
+Those pointers are returned in the \texttt{rax} register \cites[24\psq]{Lu2018}[cf.][14]{Lu2015}.
+If a function without return value or return type \texttt{void} returns, it doesn't set a specific return value in \texttt{rax}.
+Thus, if the last operation to modify the \texttt{rax} register was an operation putting the shellcode buffer's address into \texttt{rax} such as the memory copying functions mentioned above like in the example in \cref{lst:ret2rax}, diverting control flow so that execution continues at the location stored in \texttt{rax} results in arbitrary code execution of the injected shellcode.
+For such an attack to work, an attacker has to overwrite the \gls{rip} of a function where such a stack buffer overflow occurs with the address of a \texttt{jmp rax} or a similar instruction having the same effect like \texttt{call rax} as shown exemplarily in \cref{fig:ret2rax}.
+When the function then returns, the program jumps to the address saved in \texttt{rax} and thus continues execution with running the attacker-controlled shellcode.
+
+\begin{lstlisting}[language=C,float=ht,caption={C function with stack buffer overflow vulnerability prone to ret2rax attacks}, label={lst:ret2rax}]
+void function(char *s) {
+    char vulnerable_buffer[32];
+    strcpy(vulnerable_buffer, s);
+}
+\end{lstlisting}
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=0.7\textwidth]{figures/ret2rax}
+	\caption{Stack layout before and after a stack buffer overflow with ret2rax approach (own graphical representation based on figure 26 in \cite[14]{Mueller2008})}
+	\label{fig:ret2rax}
+\end{figure}
+
 \section*{ToDo}
 
 \begin{itemize}
