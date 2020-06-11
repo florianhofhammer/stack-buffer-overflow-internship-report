@@ -550,6 +550,29 @@ An example how stack layout could look like when conducting such an attack is sh
 	\label{fig:ret2rsp}
 \end{figure}
 
+\subsection{Difficulties and countermeasures}
+\label{subsec:aici-countermeasures}
+
+In general, the same problems arise as in \cref{subsec:ci-countermeasures} for \crtlnameref{sec:code-injection}.
+However, unknown stack addresses due to \gls{aslr} are not a problem anymore.
+The stack juggling methods only rely on gadget addresses.
+Thus, if \gls{aslr} is enabled but the program under attack is not compiled as \gls{pie}, \crtlnameref{sec:address-invariant-code-injection} methods can present a serious alternative to classical code injection attacks when stack addresses are randomized and pure \crtlnameref{sec:code-reuse} attacks are not powerful enough due to library address randomization and the executable not containing enough gadgets or functions in the \gls{plt}.
+
+\subsubsection{64 bit addressing}
+\label{subsubsec:aici-64bit-addressing}
+
+A huge problem still is 64 bit addressing and the resulting \texttt{0x00} bytes in the addresses of the gadgets needed (cf. \cref{subsubsec:ci-64bit-addressing}).
+Building shellcode without such bytes has been shown to not be a problem (\cites[290\psqq]{Erickson2008}{Mason2009}{obscou2003}), so only the \texttt{0x00} bytes in addresses have to be handled in case of stack buffer overflows based on string-based functions.
+
+In the case of the ret2eax approach, the original \gls{rip} already has the upper bytes set to \texttt{0x00}.
+Because of little endian representation, it is sufficient to overwrite the lower bytes with the desired \texttt{jmp rax} or similar instruction's address and discard the address's \texttt{0x00} bytes, as they are already present in memory.
+The only difficulty here is to find a suitable instruction in the non-\acs{pie} \gls{elf} binary which has only the contiguous upper bytes set to \texttt{0x00} but where the lower bytes can all be written by string-based functions.
+
+Otherwise, the same applies as for the other approaches, namely ret2ret, ret2pop and ret2rsp.
+For those, an attacker has to write several addresses or past the gadget's address with high probability, as a single gadget for reaching the pointer for ret2ret and ret2pop is unlikely.
+Thus, the overflow mustn't stop at the first gadget's address in order for an exploit to succeed.
+This implies that string-based functions might pose a problem in such cases and such stack buffer overflows can only be conducted efficiently and reliably by using functions or routines based on binary data such as \texttt{memcpy} or loops copying data from one buffer to another with an incorrect number of iterations.
+
 \section*{ToDo}
 
 \begin{itemize}
