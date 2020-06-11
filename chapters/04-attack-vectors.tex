@@ -458,7 +458,7 @@ Because the addresses of gadgets are also affected by \gls{aslr} just like the s
 \subsection{ret2ret}
 \label{subsec:aici-ret2ret}
 
-The \emph{ret2ret} approach is based on exploiting pointers already located in stack frames which are located higher in the call stack.
+The \emph{ret2ret} approach is based on exploiting pointers located at higher addresses on the stack and thus further down in the stack.
 The idea is to place shellcode into the vulnerable buffer before reaching the return address to overwrite and to overflow the current function's return address and any stack space between the return address and such a pointer with the address of a gadget that is only composed of a \texttt{ret} instruction.
 When the overflow occurs because of a string-based function such as \texttt{strcat} or \texttt{strcpy}, the function always appends a string-terminating \texttt{0x00} byte at the end of the string.
 Thus, if the addresses are correctly aligned to the stack and end right before the desired pointer, the latter's least significant byte (little endian on \texttt{x86(\_64)}) is overwritten with such a \texttt{0x00} byte.
@@ -472,6 +472,34 @@ An exemplary stack layout for such an attack is shown in \cref{fig:ret2ret}.
 	\caption{Stack layout before and after a stack buffer overflow with ret2ret approach (own graphical representation based on figure 16 in \cite[10]{Mueller2008})}
 	\label{fig:ret2ret}
 \end{figure}
+
+\subsection{ret2pop}
+\label{subsec:aici-ret2pop}
+
+The idea behind \emph{ret2pop} is similar to the ret2ret approach.
+The main difference is that instead of relying on the modification of an existing pointer, the ret2pop approach takes already existing pointers perfectly pointing into an attacker-controlled buffer where the shellcode resides.
+This buffer can even be a buffer different from the one that is vulnerable to a stack buffer overflow.
+The attacker overwrites everything from the overwritten code pointer (usually \gls{rip}) up to the pointer with the address of a \texttt{ret} gadget, apart from the last 16 bytes (on \texttt{x86\_64}) before the pointer.
+At that position, they put the address of a \texttt{pop; ret} gadget and don't modify the last 8 bytes between the overflown memory and the pointer perfectly pointing into the shellcode.
+When this exploit is run, the program then executes all of the return instructions, pops the 8 bytes in front of the pointer from the stack and uses the pointer as the last return address, effectively returning to the shellcode (cf. exemplary stack layout in \cref{fig:ret2pop}).
+This approach is useful if dealing with string-based overflows, as the string-terminating \texttt{0x00} byte then doesn't modify the pointer but only the garbage on the stack which is popped before returning to the shellcode.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=0.7\textwidth]{figures/ret2pop}
+	\caption{Stack layout before and after a stack buffer overflow with ret2pop approach (own graphical representation based on figure 19 in \cite[12]{Mueller2008})}
+	\label{fig:ret2pop}
+\end{figure}
+
+Finding such pointers in most cases is not too hard.
+On \texttt{x86}, pointers to buffers as arguments to functions are passed on the stack \cites[11\psq]{Lu2015}[17\psqq]{Fog2019}.
+Thus, if a buffer containing shellcode at the end of a function was passed to that function as a parameter, its address is located on the stack and can be used as such a perfect pointer.
+This method is not likely to work on \texttt{x86\_64}, as parameters are usually passed in registers \cites[19\psqq]{Lu2018}[17\psqq]{Fog2019}.
+However, command line arguments to the program are located at high addresses and thus near the bottom of the stack independently from the architecture \cites[18\psqq]{Lu2015}[31\psqq]{Lu2018}.
+Thus, if an adversary can pass the desired shellcode as an argument to the process on startup and overwrite the stack up until to the arguments, they can return to the shellcode and achieve arbitrary code execution.
+
+\Citeauthor{Kotler2005} and \citeauthor{Mueller2008} both describe the ret2pop approach based on the \texttt{x86} calling convention and thus reuse function arguments \cites{Kotler2005}[11\psq]{Mueller2008}.
+As described above, this approach might not work on \texttt{x86\_64} and thus might have to be adapted to use other pointers such as \texttt{argv} argument pointers.
 
 \section*{ToDo}
 
