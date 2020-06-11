@@ -528,6 +528,28 @@ void function(char *s) {
 	\label{fig:ret2rax}
 \end{figure}
 
+\subsection{ret2rsp}
+\label{subsec:aici-ret2rsp}
+
+Similar to the the ret2rax approach, the \emph{ret2rsp} approach is based on register contents at the end of a function.
+Also, like ret2rax, the suffix is derived from the register name.
+On \texttt{x86\_64}, the suffix is thus \texttt{rsp} where it was \texttt{esp} in the original proposal by \citeauthor{Kotler2005} \cite{Kotler2005}.
+
+When a stack buffer overflow vulnerability can be found in a function, an attacker can overflow the buffer so that they overwrite the function's return address with the address of a \texttt{jmp rsp} instruction or an instruction with similar behavior.
+After this address, the attacker then puts the shellcode they want to execute.
+After running the function epilogue, the stack pointer points to the return address on the stack.
+The function's \texttt{ret} instruction then pops the return address from the stack and execution is continued at this address.
+The stack pointer thus points directly after the \gls{rip} on the stack when the \texttt{jmp rsp} instruction is executed.
+Because of this jump instruction, execution is continued at the address that is found in the \texttt{rsp} register which points to the shellcode on the stack.
+An example how stack layout could look like when conducting such an attack is shown in \cref{fig:ret2rsp}.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=0.7\textwidth]{figures/ret2rsp}
+	\caption{Stack layout before and after a stack buffer overflow with ret2rsp approach (own graphical representation based on figure 22 in \cite[13]{Mueller2008})}
+	\label{fig:ret2rsp}
+\end{figure}
+
 \section*{ToDo}
 
 \begin{itemize}
