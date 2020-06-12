@@ -143,7 +143,7 @@ In an example as in \cref{lst:local-global-buffer}, this problem does not occur 
 
 As described in \cref{subsec:fortify-source}, the size checks conducted by setting the \texttt{\_FORTIFY\linebreak[0]\_SOURCE} value to a value higher than 0 are only activated if the value is set manually or compiler optimizations are enabled by corresponding compiler flags.
 Thus, this is not a default defense measure.
-However, when activated, the size checks at compile time and run time can successfully prevent stack buffer overflows and thus render a stack buffer overflow vulnerability basically unusable for code injection, as the program exits before the actual overflow even occurs.
+However, when activated, the size checks at compile time and run time can in many cases successfully prevent stack buffer overflows and thus render a stack buffer overflow vulnerability basically unusable for code injection, as the program exits before the actual overflow even occurs.
 
 \subsubsection{\glsentrylong{dep} (\glsentryshort{dep})}
 \label{subsubsec:ci-data-execution-prevention}
@@ -151,7 +151,7 @@ However, when activated, the size checks at compile time and run time can succes
 Seeing that the \gls{nx} bit is used by the Linux kernel by default (cf. \cref{sec:executable-space-protection}), \gls{dep} features prevent stack contents from being executable by default.
 For the stack being marked as executable, the \texttt{-z execstack} command line parameter has to be passed to \gls{gcc} explicitly.
 
-Thus, it is not possible to make use of code injection into a process's address space on modern \glspl{os}, as the injected code is located on memory pages marked as non-executable and trying to execute code from such pages just yields a \gls{segfault}.
+Thus, it is not possible to make use of code injection into a process's address space on modern \glspl{os} by default, as the injected code is located on memory pages marked as non-executable and trying to execute code from such pages just yields a \gls{segfault}.
 This not only includes a function's local stack memory but also the memory areas where environment variables are located as well as memory regions used for storing global variables.
 
 \subsubsection{\glsentrylong{aslr} (\glsentryshort{aslr})}
@@ -163,7 +163,7 @@ Still, enabling \gls{aslr} cannot guarantee to prevent code injection attacks.
 If \gls{aslr} is enabled but the executable is not compiled as \gls{pie}, sections in the \gls{elf} binary such as \texttt{.bss} or \texttt{.data} are still located at fixed addresses and can thus be used as a target as described in the section about \crtlnameref{subsubsec:ci-via-globals}.
 
 Even if \gls{aslr} is enabled on the system under attack and the executable was compiled as \gls{pie} beforehand, \gls{aslr} just lowers the chance of an attacker to hit the right address but does not prevent it for sure.
-The stochastic approach of \gls{aslr} and other weaknesses which are further described in \cref{chp:defense-mechanism-improvements} and where bypass approaches are presented in following sections stil allow for successful code injection attacks.
+The stochastic approach of \gls{aslr} and other weaknesses which are further described in \cref{chp:defense-mechanism-improvements} and where bypass approaches are presented in following sections still allow for successful code injection attacks.
 \todo{Make reference more concrete than just referring to a whole chapter}
 
 Nevertheless, the combination of \gls{dep} and \gls{aslr} in general provides a strong defense against code injection stack buffer overflow attacks by combining memory addresses that are hard to get right with non-executable memory regions.
@@ -573,6 +573,40 @@ For those, an attacker has to write several addresses or past the gadget's addre
 Thus, the overflow mustn't stop at the first gadget's address in order for an exploit to succeed.
 This implies that string-based functions might pose a problem in such cases and such stack buffer overflows can only be conducted efficiently and reliably by using functions or routines based on binary data such as \texttt{memcpy} or loops copying data from one buffer to another with an incorrect number of iterations.
 
+\section{Brute-force attacks}
+\label{sec:brute-force}
+
+Security measures based on randomness such as random stack canaries or \gls{aslr} are relying on the quality of their randomness.
+In \cref{subsec:bf-aslr}, we show that bad randomness can render \gls{aslr} more or less useless and not pose a big difficulty to an attacker.
+In \cref{subsec:bf-information-leaking}, we show that in some specific cases randomization is basically non-existent, allowing an attacker to bypass stack canary randomness as well as \gls{aslr}.
+
+\subsection{Brute-force \glsentryshort{aslr} bypassing}
+\label{subsec:bf-aslr}
+
+As \citeauthor{MarcoGisbert2016} show in their publication \citetitle{MarcoGisbert2016}, entropy for \gls{aslr} is very low in 32 bit \texttt{x86} Linux systems \cite[4\psqq]{MarcoGisbert2016}.
+This is caused by several reasons.
+Firstly, withozt sub-page randomization, only the memory pages' base addresses are randomized but the contents of a page are always located at the same offset inside the page.
+The default page size of $ 4 \text{\space KiB} = 4096 \text{\space bytes} $ thus already reduces the number of bits available for randomization by 12 ($ 4096 = 2^{12} $) \cite[8\psqq]{MarcoGisbert2016}.
+Secondly, non-uniform distribution of the addresses further reduces entropy, as some addresses are more likely to appear than others after \gls{aslr} is applied \cite[4\psqq]{MarcoGisbert2016}.
+In general, \citeauthor{MarcoGisbert2016} conclude from their findings that \gls{aslr}'s protection on 32 bit systems is questionable \cite[15]{MarcoGisbert2016}.
+
+\Citeauthor{Mueller2008} comes to the same conclusion and even provides example code which injects shellcode with a \acs{nop} sled into a buffer and starts the vulnerable program over and over again until the overflown return address points into the \acs{nop} sled, \gls{aslr} is thus successfully bypassed and the shellcode is executed \cite[3\psq]{Mueller2008}.
+With some smaller adaptations%
+	\footnote{Specifically: changing the base address to which pseudo-random offsets are added from \texttt{0xbf010101} to \texttt{0xff010101}, as 64 bit Linux kernels running 32 bit executables locate the stack at different memory regions than native 32 bit kernels}%
+, this exemplary code still works on current Linux kernels%
+	\footnote{\gls{aslr} enabled by executing the command \texttt{echo 2 | sudo tee /proc/sys/kernel/randomize\_\linebreak[0]va\_space}, code compiled with \gls{gcc} flags \texttt{-m32 -fno-stack-protector -U\_FORTIFY\_SOURCE -D\_FORTIFY\_SOURCE=0 -mpreferred-stack-boundary=2 -g -z execstack}}
+and can successfully bypass any protection introduced by \gls{aslr} in an order of magnitude of a few minutes.
+
+\Citeauthor{MarcoGisbert2016} and \citeauthor{Mueller2008} mention in their publications that 64 bit systems yield much higher security levels because of more address bits to randomize \cites[15]{MarcoGisbert2016}[3]{Mueller2008}.
+In \citeyear{Shacham2004}, \citeauthor{Shacham2004} already stated that ``the most promising solution appears to be upgrading to 64-bit architecture'' \cite[306]{Shacham2004}.
+An analysis on whether \gls{aslr} can successfully prevent brute-force attacks on \texttt{x86\_64} systems is out of scope of this paper, but it can quickly be seen that the enhanced entropy of randomized addresses on 64 bit machines, such as 28 randomized bits for addresses of memory mapped data%
+	\footnote{Retrieved with \texttt{cat /proc/sys/vm/mmap\_rnd\_bits}, also mentioned in \cite[4\psq]{MarcoGisbert2016}}
+adds enough randomization to make brute-force attacks either unfeasible or at least easily detectable by the huge number of necessary requests to a vulnerable system.
+
+\subsection{Brute-force based information leaking}
+\label{subsec:bf-information-leaking}
+
+
 \section*{ToDo}
 
 \begin{itemize}
@@ -583,7 +617,7 @@ This implies that string-based functions might pose a problem in such cases and 
 		\gls{aslr} brute-force $\Rightarrow$ on \texttt{x86\_64} difficult because of too much entropy
 	}
 	\item{
-		Return into non-radnomized memory (\gls{aslr} bypass) ret2text, ret2bss, ret2data: on non-\gls{pie}
+		Return into non-radnomized memory (\gls{aslr} bypass) ret2text, ret2bss, ret2data: on non-\gls{pie} \cmark
 	}
 	\item{
 		Pointer redirection: string or function pointers
@@ -592,10 +626,10 @@ This implies that string-based functions might pose a problem in such cases and 
 		Integer overflows $\Rightarrow$ signedness or wrong width (e.g. \texttt{int} assignment to \texttt{char})
 	}
 	\item{
-		Code injection: ret2esp, ret2ret, ret2pop, ret2eax
+		Code injection: ret2esp, ret2ret, ret2pop, ret2eax \cmark
 	}
 	\item{
-		Destructor overwriting ret2dtors
+		Destructor overwriting ret2dtors $\Rightarrow$ more something for targeted overwrites like string format vulnerabilities
 	}
 	\item{
 		Stack canaries: clone-probing to defeat canaries \textbf{and} \gls{aslr}
