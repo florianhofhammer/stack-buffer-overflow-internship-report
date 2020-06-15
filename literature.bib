@@ -59,6 +59,15 @@
   abstract  = {Software exploitation has been proven to be a lucrative business for cybercriminals. Unfortunately, protecting software against attacks is a long-lasting endeavor that is still under active research. However, certain software-hardening schemes are already incorporated into current compilers and are actively used to make software exploitation a complicated procedure for the adversaries. Stack canaries are such a protection mechanism. Stack canaries aim to prevent control flow hijack by detecting corruption of a specific value on the program's stack. Careful design and implementation of this conceptually straightforward mechanism is crucial to defeat stack-based control flow detours. In this paper, we examine 17 different stack canary implementations across multiple versions of the most popular Operating Systems running on various architectures. We systematically compare critical implementation details and introduce one new generic attack vector which allows bypassing stack canaries on current Linux systems running up-to-date multi-threaded software altogether. We release an open-source framework (CookieCrumbler) that identifies the characteristics of stack canaries on any platform it is compiled on and we propose mitigation techniques against stack-based attacks. Although stack canaries may appear obsolete, we show that when they are used correctly, they can prevent intrusions which even the more sophisticated solutions may potentially fail to block.},
 }
 
+@InProceedings{Bittau2014,
+  author    = {Andrea Bittau and Adam Belay and Ali Mashtizadeh and David Mazières and Dan Boneh},
+  booktitle = {2014 {IEEE} Symposium on Security and Privacy},
+  date      = {2014-05},
+  title     = {Hacking Blind},
+  doi       = {10.1109/sp.2014.22},
+  publisher = {{IEEE}},
+}
+
 @InProceedings{Bletsch2011,
   author    = {Bletsch, Tyler and Jiang, Xuxian and Freeh, Vince W. and Liang, Zhenkai},
   booktitle = {Proceedings of the 6th ACM Symposium on Information, Computer and Communications Security},
@@ -197,8 +206,8 @@
 @Software{FSF2020a,
   author  = {{Free Software Foundation, Inc.}},
   date    = {2020},
-  title   = {[glibc.git] / sysdeps / x86_64 / setjmp.S},
-  url     = {https://sourceware.org/git/?p=glibc.git;a=blob;f=sysdeps/x86_64/setjmp.S;h=b4e05e0f0c1bb2184cf872a6a26eb18de6cfeba1;hb=9ea3686266dca3f004ba874745a4087a89682617},
+  title   = {glibc-2.31},
+  url     = {https://sourceware.org/git/?p=glibc.git;a=tree;h=6ee690ef6fa36bf79d2e05b5a30a4f7e10ba3937;hb=9ea3686266dca3f004ba874745a4087a89682617},
   urldate = {2020-05-27},
   version = {2.31},
 }
@@ -284,6 +293,14 @@
   urldate = {2020-06-11},
 }
 
+@Online{Kerrisk2020d,
+  author  = {Michael Kerrisk},
+  date    = {2020-06-13},
+  title   = {FORK(2) Linux Programmer's Manual},
+  url     = {https://man7.org/linux/man-pages/man2/fork.2.html},
+  urldate = {2020-06-15},
+}
+
 @Book{Klein2011,
   author    = {Tobias Klein},
   date      = {2011},
@@ -356,6 +373,17 @@
   url     = {https://github.com/hjl-tools/x86-psABI/wiki/intel386-psABI-1.1.pdf},
   urldate = {2020-06-02},
   version = {1.1},
+}
+
+@InProceedings{Lu2016,
+  author    = {Kangjie Lu and Stefan Nürnberger and Michael Backes and Wenke Lee},
+  booktitle = {Proceedings of the 2016 Network and Distributed System Security Symposium},
+  date      = {2016},
+  title     = {How to Make {ASLR} Win the Clone Wars: Runtime Re-Randomization},
+  doi       = {10.14722/ndss.2016.23173},
+  isbn      = {1-891562-41-X},
+  location  = {San Diego, CA, USA},
+  publisher = {Internet Society},
 }
 
 @Manual{Lu2018,
