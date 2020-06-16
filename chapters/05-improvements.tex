@@ -1,0 +1,50 @@
+\chapter{Improvements for defense mechanisms}
+\label{chp:defense-mechanism-improvements}
+
+In this chapter, we refer to weaknesses in current security mechanisms that were described in \cref{chp:current-defense-mechanisms,chp:attack-vectors} and present several suggestions on how to improve security in regards to stack buffer overflow exploit prevention.
+
+In \cref{sec:aslr-improvements,sec:stack-canary-improvements} we refer to mechanisms mainly based on randomization and the problems coming with such randomization.
+In \cref{sec:function-pointer-protection-improvements,sec:control-flow-integrity} we then present more deterministic approaches to protect processes against stack buffer overflow exploits.
+Finally, \cref{sec:performance-comparison} concludes with comparing the performance impact of the previously presented security improvements.
+
+\section{\glsentrylong{aslr} (\glsentryshort{aslr})}
+\label{sec:aslr-improvements}
+
+\begin{itemize}
+	\item{Randomized on program startup}
+	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
+\end{itemize}
+
+\section{Stack canaries}
+\label{sec:stack-canary-improvements}
+
+\begin{itemize}
+	\item{Random canary created on program startup}
+	\item{Same canary for all functions $\Rightarrow$ canary disclosure in one function makes all other functions vulnerable}
+	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
+\end{itemize}
+
+\section{Function pointer protection}
+\label{sec:function-pointer-protection-improvements}
+
+\begin{itemize}
+	\item{Encryption}
+	\item{Mangling}
+	\item{Stored in protected memory regions}
+\end{itemize}
+
+\section{\glsentrylong{cfi} (\glsentryshort{cfi})}
+\label{sec:control-flow-integrity}
+
+\begin{itemize}
+	\item{\gls{cfi} => overhead?}
+	\item{Intel CET $\Rightarrow$ shadow stack, branch validation}
+\end{itemize}
+
+\section{Performance comparison of presented approaches}
+\label{sec:performance-comparison}
+
+\begin{itemize}
+	\item{Table with performance overheads}
+	\item{Gather information from different papers}
+\end{itemize}

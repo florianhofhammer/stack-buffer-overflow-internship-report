@@ -655,31 +655,106 @@ With string-based functions, such an attack cannot work, as string-based functio
 This would lead to the impossibility of successfully leaking the stack canary, as the \texttt{0x00} byte would already overwrite the next byte after the one that is currently guessed.
 As a consequence, with this kind of attack there are also no problems with addresses of functions or gadgets or any other payload containing \texttt{0x00} bytes, as such bytes can be written with functions operating on arbitrary binary data.
 
-\section*{ToDo}
+\section{Comparison of presented approaches}
+\label{sec:attack-comparison}
 
-\begin{itemize}
-	\item{
-		\gls{got} hijacking / overwriting (space constraints $\Rightarrow$ doesn't need as much space as shellcode or \gls{rop} chains) \cmark
+All of the different approaches to exploit a stack buffer overflow presented in the previous sections have different prerequisites and effects.
+In this section, we present an overview over the power and limitations of the different approaches.
+
+\begin{table}[ht]
+	\centering
+	\caption{Comparison of different attack approaches}
+	\hspace*{-5mm}
+	\makebox[\textwidth][c]{ % command is necessary in order to center the table correctly
+		\bgroup
+		\def\arraystretch{1.1} % changes vertical spacing so that the table looks better
+		\newlength{\colwidth} % Column width for table and nested tables for clean alignment
+		\setlength{\colwidth}{1.8cm}
+		\begin{tabular}{|l|*{6}{P{\colwidth}|}}
+			\hline
+			Attack approach	& \multicolumn{6}{@{}l@{}}{
+								\begin{tabular}{*{6}{p{\colwidth}|}}
+									\multicolumn{6}{l|}{Security measure}	\\ \hline
+									\texttt{\_FORTIFY\linebreak[0]\_SOURCE}	& \acs{dep} / \acs{nx} bit	& \acs{aslr} (without \acs{pie} / \acs{pic})	& \acs{aslr} (with \acs{pie} / \acs{pic})	& Stack canaries	& (full) \acs{relro}	\\
+								\end{tabular}					
+							  } \\ \hline
+			Code injection:					&		 &		  &		   &		&		 &		  \\
+			\tabitem{into stack buffer}		& \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+			\tabitem{into environment }		& \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+			\tabitem{into globals}			& \xmark & \xmark & \cmark & \xmark & \xmark & \cmark \\ \hline
+			Code reuse:						&		 &		  &		   &		& 		 & 		  \\
+			\tabitem{\acs{ret2libc}}		& \xmark & \cmark & \xmark & \xmark & \xmark & \cmark \\
+			\tabitem{\acs{ret2plt}}			& \xmark & \cmark & \cmark & \xmark & \xmark & \cmark \\
+			\tabitem{\acs{rop}}				& \xmark & \cmark & \cmark & \xmark & \xmark & \cmark \\
+			\tabitem{\acs{jop}}				& \xmark & \cmark & \cmark & \xmark & \xmark & \cmark \\
+			\tabitem{\acs{cop}}				& \xmark & \cmark & \cmark & \xmark & \xmark & \cmark \\
+			\tabitem{\acs{srop}}			& \xmark & \cmark & \cmark & \xmark & \xmark & \cmark \\ \hline
+			\acs{got} hijacking				& \xmark & \cmark & \cmark & \xmark & \cmark & \xmark \\ \hline
+			Stack juggling:					&		 &		  &		   &		&		 &		  \\
+			\tabitem{ret2ret}				& \xmark & \xmark & \cmark & \xmark & \xmark & \cmark \\
+			\tabitem{ret2pop}				& \xmark & \xmark & \cmark & \xmark & \xmark & \cmark \\
+			\tabitem{ret2rax}				& \xmark & \xmark & \cmark & \xmark & \xmark & \cmark \\
+			\tabitem{ret2rsp}				& \xmark & \xmark & \cmark & \xmark & \xmark & \cmark \\ \hline
+			Brute-force attacks:			&		 &		  &		   &		&		 &		  \\
+			\tabitem{Address guessing}		& \xmark & \xmark & \cmark & \cmark & \xmark & \cmark \\
+			\tabitem{Stack reading}			& \xmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+			\hline
+		\end{tabular}
+		\egroup
 	}
-	\item{
-		\gls{aslr} brute-force $\Rightarrow$ on \texttt{x86\_64} difficult because of too much entropy
-	}
-	\item{
-		Return into non-radnomized memory (\gls{aslr} bypass) ret2text, ret2bss, ret2data: on non-\gls{pie} \cmark
-	}
-	\item{
-		Pointer redirection: string or function pointers
-	}
-	\item{
-		Integer overflows $\Rightarrow$ signedness or wrong width (e.g. \texttt{int} assignment to \texttt{char})
-	}
-	\item{
-		Code injection: ret2esp, ret2ret, ret2pop, ret2eax \cmark
-	}
-	\item{
-		Destructor overwriting ret2dtors $\Rightarrow$ more something for targeted overwrites like string format vulnerabilities
-	}
-	\item{
-		Stack canaries: clone-probing to defeat canaries \textbf{and} \gls{aslr} \cmark
-	}
-\end{itemize}
+	\label{tab:attack-comparison}
+\end{table}
+\todo{Fix awful indentation issue $\Rightarrow$ hspace in table shouldn't be necessary, maybe put table onto landscape page}
+
+The main overview is provided in \cref{tab:attack-comparison}.
+This table shows for the previously presented attack approaches which security measures they can bypass (\cmark) and which security measures can prevent those attacks (\xmark).
+
+Still, it is important to note that none of the presented approaches can bypass all modern security measures in any vulnerable executable.
+In fact, most of the attacks described rely on specific prerequisites.
+For example, \gls{got} hijacking as described in \cref{sec:got-hijacking} cannot be prevented by deploying stack canaries, as the canaries only protect control flow information but not function-local data such as pointers to strings.
+However, for the exploit to work as described, it is necessary to have a stack buffer overflow which allows an attacker to overwrite a string pointer and to have a write operation writing user-controlled data and working on the overwritten pointer later in the program.
+Thus, even when a specific kind of attack may be able to bypass certain security measures in theory, the success of such an attack still depends on process-intrinsic behavior.
+
+Additionally, different approaches can be combined to facilitate and optimize an exploit.
+For example, if the stack is marked as non-executable (\gls{dep}), an attacker might resort to code reuse attacks such as \gls{rop}.
+Unfortunately, this means that it may be necessary to inject a memory address with a length of 8 bytes on 64 bit systems into the process which only yields execution of a single instruction if the referenced gadget only contains one functional instruction.
+Functional instruction here means an instruction that actually manipulates register contents, memory or control flow and is not just used for chaining the next gadget.
+This seems like a huge overhead.
+As an example, on \texttt{x86\_64} the address of a \texttt{jmp rbx; ret} gadget is 8 bytes, whereas the gadget itself can be encoded in the two bytes \texttt{5b c3} (hexadecimal representation) \cite[3-2\psq,4-390,4-555]{IntelCorporation2020}.
+Such an overhead might be a problem if a lot of instructions are needed to be chained up in order to achieve the desired effect.
+An attacker could thus just launch a \gls{rop} attack which marks the stack's memory regions as writable and executable or allocates memory on the heap and marks that as writable and executable and then injects shellcode into such executable memory.
+Such an approach would be a combination of code reuse and code injection and could combine the best of both worlds, effectively bypassing \gls{dep} but still using compact shellcode instead of chaining up verbose gadgets.
+
+As a conclusion, none of the approaches presented can be seen as a one-size-fits-all solution.
+However, combining them intelligently and fitting them to the actual process or program under attack can result in arbitrary code execution even on systems with modern protection mechanisms.
+
+
+
+%\section*{ToDo}
+%
+%\begin{itemize}
+%	\item{
+%		\gls{got} hijacking / overwriting (space constraints $\Rightarrow$ doesn't need as much space as shellcode or \gls{rop} chains) \cmark
+%	}
+%	\item{
+%		\gls{aslr} brute-force $\Rightarrow$ on \texttt{x86\_64} difficult because of too much entropy \cmark
+%	}
+%	\item{
+%		Return into non-radnomized memory (\gls{aslr} bypass) ret2text, ret2bss, ret2data: on non-\gls{pie} \cmark
+%	}
+%	\item{
+%		Pointer redirection: string or function pointers
+%	}
+%	\item{
+%		Integer overflows $\Rightarrow$ signedness or wrong width (e.g. \texttt{int} assignment to \texttt{char})
+%	}
+%	\item{
+%		Code injection: ret2esp, ret2ret, ret2pop, ret2eax \cmark
+%	}
+%	\item{
+%		Destructor overwriting ret2dtors $\Rightarrow$ more something for targeted overwrites like string format vulnerabilities
+%	}
+%	\item{
+%		Stack canaries: clone-probing to defeat canaries \textbf{and} \gls{aslr} \cmark
+%	}
+%\end{itemize}

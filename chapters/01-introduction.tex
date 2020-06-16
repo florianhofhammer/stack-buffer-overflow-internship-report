@@ -20,7 +20,7 @@ In later versions, the behavior might change in order to mitigate some of the we
 Those specific software versions comprise version 5.4.44 of the Linux kernel%
 	\footnote{Source code can be viewed online at \href{https://git.kernel.org/stable/h/v5.4.44}{git.kernel.org} \cite{LKD2020}}%
 .
-This release is a \gls{lts} release which means that it will be maintained until the end of 2021 \cite{LKO2020}.
+This release is a \gls{lts} release which means that it will be maintained until the end of 2025 \cite{LKO2020}.
 The version of \gls{glibc} is 2.31%
 	\footnote{Source code can be viewed online at \href{https://sourceware.org/git/?p=glibc.git;a=tree;h=6ee690ef6fa36bf79d2e05b5a30a4f7e10ba3937;hb=9ea3686266dca3f004ba874745a4087a89682617}{sourceware.org}}%
 .
@@ -37,7 +37,7 @@ Thus, it is safe to assume that the majority of devices running Linux kernels or
 
 A similar observation can be made for \gls{gcc} version 9.3.0.
 The aforementioned Linux distributions all by default ship the \gls{gcc} package in version 9.3.0 or below \cite{RedHat2020a,Canonical2020a,SPI2020b}.
-It an therefore be safely assumed that \gls{gcc} version 9.3.0 is still very widespread and in frequent use.
+It can therefore be safely assumed that \gls{gcc} version 9.3.0 is still very widespread and in frequent use.
 
 If not otherwise stated, the following chapters and sections are referring to a 64 bit (\texttt{x86\_64} or \texttt{amd64} architecture) \acs{gnu}/Linux system with the aforementioned software versions.
 Thus, if referring to processor registers, by default the corresponding 64 bit register names (starting with the letter \texttt{r} instead of \texttt{e} on 32 bit \texttt{x86} architecture, for example \texttt{rsp} instead of \texttt{esp}) are used.
@@ -47,7 +47,7 @@ In addition, a memory layout equivalent to the memory layout for C programs as d
 The terms \texttt{x86} and \texttt{i386} for 32 bit processor architectures and \texttt{x86\_64} and \texttt{amd64} for 64 bit processor architectures are used synonymously throughout this report.
 
 This report only targets userspace stack buffer overflows.
-The kernel is assumed to be safe and not targeted in this report.
+The kernel is assumed to be safe in a sense that it has no stack buffer overflow vulnerabilities and is thus not targeted in this report.
 \todo{Maybe move to other section? Not really defining the system...}
 
 \section{Report structure}

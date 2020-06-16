@@ -1,39 +1,3 @@
-\chapter{Improvements for defense mechanisms}
-\label{chp:defense-mechanism-improvements}
-
-\section{\glsentrylong{aslr} (\glsentryshort{aslr})}
-\label{sec:aslr-improvements}
-
-\begin{itemize}
-	\item{Randomized on program startup}
-	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
-\end{itemize}
-
-\section{Stack canaries}
-\label{sec:stack-canary-improvements}
-
-\begin{itemize}
-	\item{Random canary created on program startup}
-	\item{Same canary for all functions $\Rightarrow$ canary disclosure in one function makes all other functions vulnerable}
-	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
-\end{itemize}
-
-\section{\glsentrylong{cfi} (\glsentryshort{cfi})}
-\label{sec:control-flow-integrity}
-
-\begin{itemize}
-	\item{\gls{cfi} => overhead?}
-	\item{Intel CET $\Rightarrow$ shadow stack, branch validation}
-\end{itemize}
-
-\section{Performance comparison of mentioned approaches}
-\label{sec:performance-comparison}
-
-\begin{itemize}
-	\item{Table with performance overheads}
-	\item{Gather information from different papers}
-\end{itemize}
-
 % Depending on time left!
 \chapter{OS assessment}
 \label{chp:os-assessment}

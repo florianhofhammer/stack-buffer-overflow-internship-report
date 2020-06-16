@@ -127,7 +127,7 @@ Furthermore, a \gls{wxorx} approach on modern systems marks memory pages as eith
 This approach can be seen as an extension to just marking the stack as non-executable and prevents an attacker from executing code he has written into the program's memory space before.
 
 \section{Function pointer protection}
-\label{sec:function-pointer-protection}
+\label{sec:function-pointer-protection-current}
 
 Buffer overflows can not only affect the \acrfull{sfp} and \acrfull{rip} but also other stack contents such as function pointers.
 Thus, an attacker can also divert control flow if they manage to overwrite a function pointer instead of the \gls{rip} and the program tries to call the corresponding function through such a function pointer afterwards.

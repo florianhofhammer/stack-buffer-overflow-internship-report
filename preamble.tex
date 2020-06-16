@@ -235,9 +235,12 @@ block=space,        % Add a little spacing inside bibliography entries
 \usepackage{amssymb}
 
 % Table improvements
-% \usepackage{longtable} % not in use right now
-\usepackage{multirow}
-\newcommand{\tabitem}{~~\llap{\textbullet}~~}
+%\usepackage{longtable} % not in use right now
+%\usepackage{multirow}
+\usepackage{array}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}m{#1}} % Centered column with fixed width
+\newcommand{\tabitem}{{\textbullet}~}
+\newcommand{\rotatecell}[1]{\begin{tabular}{@{}c@{}}\rotatebox[origin=c]{90}{#1}\end{tabular}}
 
 % todonotes: Adds todo notes
 \setlength{\marginparwidth}{2cm}
