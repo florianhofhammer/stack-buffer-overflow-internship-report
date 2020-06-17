@@ -10,6 +10,68 @@ Finally, \cref{sec:performance-comparison} concludes with comparing the performa
 \section{\glsentrylong{aslr} (\glsentryshort{aslr})}
 \label{sec:aslr-improvements}
 
+As mentioned in \cref{subsec:address-space-layout-randomization}, \gls{aslr} is performed on a per-process basis.
+Thus, addresses are not re-randomized on \texttt{fork} \cite[1\psq]{Lu2016}.
+In combination with weak entropy on the randomization \cites{MarcoGisbert2014}[3\psqq]{MarcoGisbert2016}, \gls{aslr} can be bypassed by brute-forcing addresses as a whole or byte for byte (cf. \cref{sec:brute-force}).
+
+As a consequence, several methods to improve the randomization quality of \gls{aslr} were proposed over the years.
+
+\subsection{Randomization granularity}
+\label{subsec:randomization-granularity}
+
+In \citeyear{Shacham2004}, \citeauthor{Shacham2004} analyzed the \gls{aslr} functionality of the PaX kernel patch \cite{Shacham2004}.
+In this report, we were generally referring to the \gls{aslr} functionality natively included in the Linux kernel.
+However, as the PaX patches haven't been updated since Linux kernel 3.6 in 2012 \cite{PaXTeam} and the base functionality is similar, it is possible to transfer suggestions on how to improve PaX \gls{aslr} onto the Linux kernel \gls{aslr}.
+
+An important proposal of \citeauthor{Shacham2004} is to increase the granularity of address randomization.
+Instead of just randomizing the base address of code and libraries they suggest to also randomize the order of variables and functions either at compile time or at runtime \cite[303\psq]{Shacham2004}.
+
+\subsubsection{Compile time randomization}
+\label{subsubsec:randomization-granularity-compile-time}
+
+\Citeauthor{Shacham2004} suggest increasing randomization granularity already at compile time in the generated binary.
+This can be achieved by randomly reordering functions and variables and adjusting references to those functions and variables during compilation and linking \cite[304]{Shacham2004}.
+
+Such a method does not incur any runtime performance overhead, as no additional calculations or instructions have to be computed during runtime.
+Any binary of a program compiled with such compile time randomization may have a different layout but contains the same functions and variables.
+
+As an advantage, \citeauthor{Shacham2004} state enhanced entropy of up to additional 12 bits.
+On the other hand, if looking at shared libraries, compile time randomization can only provide protection against remote attackers that do not have access to the same library binary.
+A local attacker could just reference the same shared library in their own code and thus extract the library's layout \cite[304]{Shacham2004}.
+As a consequence, this method is just effective if the binaries in a user base are frequently recompiled so that they are frequently re-randomized.
+This means that compile time randomization cannot provide any protection if the program or library is just compiled once per version and distributed in binary format.
+In this case, an attacker can obtain the binary in the same version as the target and analyze its layout.
+A certain level of protection is therefore just obtained if the executable or library is distributed as source code and compiled by the users themselves or frequently recompiled for distribution even between version changes.
+
+\subsubsection{Runtime randomization}
+\label{subsubsec:randomization-granularity-runtime}
+
+Another approach is to reorder functions at runtime.
+Usually, function calls within a library or executable use direct relative addressing, as the offsets between functions and instructions remain the same on every instantiation, no matter of the randomized base address.
+If this direct relative addressing is changed to indirect relative addressing, the dynamic loader can assign randomized addresses to individual functions by storing the generated address in memory so that other functions referencing the first function can retrieve the location via indirect relative addressing \cite[304\psq]{Shacham2004}.
+
+The advantage of such an approach is that a distributed binary file can be the same for any user but the functions' order and individual addresses can change from instantiation to instantiation.
+Thus, an attacker cannot reliably predict functions' addresses by calculating them with known offsets from a known address.
+This means that without runtime randomization, an attacker only needs to find the address of a single function in a library and can determine the addresses of any other functions or specific instructions and gadgets by calculating them with the help of known offsets.
+With runtime randomization, offsets are randomized because of different function order and even when leaking a single address, other addresses cannot be reliably predicted based on the known value.
+This makes it especially hard to leverage code reuse attacks where gadgets are chained, as the individual gadgets' addresses cannot be calculated by some base address or offsets.
+
+However, this approach also has several disadvantages.
+Firstly, indirect relative addressing implies memory lookups for getting the relative offsets.
+In comparison to direct relative addressing where the offset is encoded in the instruction bytes, this additional memory lookup incurs a performance penalty.
+Secondly, randomizing the functions' order from instantiation to instantiation on a granularity finer than page-size (4 kiB, mostly) makes it difficult to share memory pages between processes, as different processes may have different randomized function orders due to the dynamic loader randomizing the order of functions in every process independently.
+This problem can be solved by only shuffling page-sized and page-aligned groups of functions at the cost of reducing the granularity.
+However, randomization granularity is still higher than without reordering functions at all.
+Last, the addresses of functions have to be determined by the dynamic loader.
+Usually, this is done by looking addresses up in the \gls{got} of an executable or library.
+Reordering functions eliminates fixed offsets used for such addressing and thus requires modifying the \gls{got} concept or replacing it by something else.
+Finding a suitable replacement with small to no overhead and performance penalty is difficult \cite[304\psq]{Shacham2004}.
+
+\bigskip\noindent
+In conclusion, \citeauthor{Shacham2004} propose several possibilities on how to enhance \gls{aslr}.
+Because of the implementation difficulties they also present, they provide no actual implementation or performance analysis.
+Still, they refer to \cite{Bhatkar2003} who in their paper \citetitle{Bhatkar2003} obtained an overhead up to 21\% with the performance overhead being below 10\% for most of their analysis of similar approaches \cite[117]{Bhatkar2003}.
+
 \begin{itemize}
 	\item{Randomized on program startup}
 	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
