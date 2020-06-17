@@ -21,7 +21,7 @@ Some measures which help mitigate stack buffer overflows are presented in the fo
 Support for the \texttt{\_FORTIFY\_SOURCE} macro was added to \gls{gcc} in \citedate{Jelinek2004} and is available since \gls{gcc} version 4.0 \cite{Sharma2014}.
 The possible values for this macro are 0, 1 and 2 with 0 meaning that it has no effect and 2 meaning that all measures that are implied by this macro are active.
 
-The effect of this macro is that the compiler checks at compile time as well as at run time whether a destination buffer is overflown by functions such as \texttt{strcpy}, \texttt{strncat}, \texttt{memcpy}, and so forth%
+The effect of this macro is that the compiler checks at compile time as well as at runtime whether a destination buffer is overflown by functions such as \texttt{strcpy}, \texttt{strncat}, \texttt{memcpy}, and so forth%
 	\footnote{Supported functions according to \cite{Kerrisk2020,Sharma2014}: \texttt{memcpy, mempcpy, memmove, memset, strcpy, stpcpy, strncpy, strcat, strncat, sprintf, vsprintf, snprintf, vsnprintf, gets}}%
 .
 In order to achieve this, the compiler checks at compile time whether the destination is big enough to hold the source's contents.
@@ -35,7 +35,7 @@ If the check fails, the program execution is aborted with an error message \cite
 The \texttt{\_FORTITY\_SOURCE} macro can either be manually set to a value higher than 0 or is automatically activated when compiler optimizations are enabled, for example by passing the \texttt{-O3} flag to \gls{gcc} \cite{Kerrisk2020,Sharma2014,Sidhpurwala2018}.
 \todo{Include example? Not sure}
 
-\citeauthor{Jelinek2004} states in the announcement of the original implementation of this feature that the run time overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
+\citeauthor{Jelinek2004} states in the announcement of the original implementation of this feature that the runtime overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
 
 \subsection{Optimizing compilation}
 \label{subsec:optimizing-compilation}

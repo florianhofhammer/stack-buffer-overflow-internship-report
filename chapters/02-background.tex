@@ -33,7 +33,7 @@ As the user input cannot be determined before running the program, the buffer ha
 The contents of the buffer are then stored on the heap.
 
 The stack on the other hand contains data with fixed size.
-In the example of \cref{lst:memory-layout}, sizes of variables like \texttt{int max\_len} or \texttt{char *input} are known at compile-time.
+In the example of \cref{lst:memory-layout}, sizes of variables like \texttt{int max\_len} or \texttt{char *input} are known at compile time.
 Thus, they can be stored on the stack by increasing the stack size by a fixed size when program flow enters the corresponding function.
 It has to be noted here that even though the contents of the \texttt{input} buffer are stored in the heap, the pointer to those contents is stored on the stack.
 
