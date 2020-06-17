@@ -72,6 +72,50 @@ In conclusion, \citeauthor{Shacham2004} propose several possibilities on how to 
 Because of the implementation difficulties they also present, they provide no actual implementation or performance analysis.
 Still, they refer to \cite{Bhatkar2003} who in their paper \citetitle{Bhatkar2003} obtained an overhead up to 21\% with the performance overhead being below 10\% for most of their analysis of similar approaches \cite[117]{Bhatkar2003}.
 
+\subsection{\glsentryshort{aslr}v3 and \glsentrylong{aslr-ng} (\glsentryshort{aslr-ng})}
+\label{subsec:aslrv3-aslr-ng}
+
+\acs{aslr}v3 and \gls{aslr-ng} are both proposals by \citeauthor{MarcoGisbert2014}, the former one presented in their \citeyear{MarcoGisbert2014} paper \citetitle{MarcoGisbert2014}, the latter one in the \citeyear{MarcoGisbert2016} paper \citetitle{MarcoGisbert2016}.
+They have similar goals but are working a little bit differently.
+
+\subsubsection{\glsentryshort{aslr}v3}
+\label{subsubsec:aslrv3}
+
+\acs{aslr}v3 was developed by \citeauthor{MarcoGisbert2014} to cope with the \emph{offset2lib} weakness in \gls{aslr}.
+When a \gls{pie} is loaded, it is loaded in contiguous memory with dynamically loaded libraries.
+This allows an attacker who can leak an address from the executable to calculate addresses of libraries, functions in libraries and also gadgets for code reuse attacks in libraries from the leaked address and fixed offsets, hence the name offset2lib.
+
+The \acs{aslr}v3 patch tries to mitigate this weakness by locating the executable at a randomized virtual memory address completely independent from any libraries \cite{MarcoGisbert2014}.
+The patch was submitted to the Linux kernel mailing list but wasn't accepted after a long discussion (cf. \cite{MarcoGisbert2014a} and the discussion thread as well as the corresponding source files in the current kernel at \cite{LKD2020}).
+
+\subsubsection{\glsentrylong{aslr-ng} (\glsentryshort{aslr-ng})}
+\label{subsubsec:aslr-ng}
+
+\gls{aslr-ng} can be seen as an extension to \acs{aslr}v3.
+In fact, the \emph{conservative} operation mode of \gls{aslr-ng} has the same effect as \acs{aslr}v3 by separating the executable from the libraries when randomizing base addresses.
+In this mode, the memory address range is divided into four zones, one for each of stack, heap, executable and memory mapped objects such as libraries, memory mapped files and more \cite[11]{MarcoGisbert2016}.
+However, \citeauthor{MarcoGisbert2016} propose an additional three operation modes for \gls{aslr-ng}.
+
+The \emph{concentrated} mode randomizes the base address but puts all objects side by side without any spacing.
+In this mode, memory space fragmentation is not an issue, as no spaces between the objects occur \cite[11]{MarcoGisbert2016}.
+
+In the \emph{extended} mode, objects' locations in memory are randomized a little bit more as in the conservative mode.
+Instead of just randomizing the base addresses of four zones and putting memory objects into those zones, memory objects are grouped based on their type.
+This means that memory mapped files are grouped together as well as libraries or thread stacks but they are all placed into memory independently from respective other kinds of memory objects \cite[11]{MarcoGisbert2016}.
+This approach basically introduces zones like in the conservative approach with higher granularity.
+
+In the \emph{paranoid} mode, each memory object is placed into memory at a completely random address.
+This implies the highest security of all four approaches, as no correlation between memory objects in memory can be established \cite[11]{MarcoGisbert2016}.
+However, fragmentation might become an issue, as the objects are randomly spread.
+In the worst case, this could mean that even with the huge 64 bit address space a process might not be able to allocate enough memory for its data, as the free space between any two already randomly placed objects is too small.
+However, \citeauthor{MarcoGisbert2016} stress that fragmentation is not a big issue on 64 bit systems because of the huge address space in comparison to 32 bit systems where fragmentation could easily become a problem \cite[3]{MarcoGisbert2016}.
+Apart from that, they suggest reserving a certain part of the virtual memory for huge \texttt{mmap} requests and by default only put objects randomly in the non-reserved part.
+This approach still has higher entropy than default Linux \gls{aslr} or PaX-\gls{aslr} \cite[10\psq]{MarcoGisbert2016} and thus provides additional security.
+
+\bigskip\noindent
+Similar to the suggestions of \citeauthor{Shacham2004}, \citeauthor{MarcoGisbert2016} propose finer randomization granularity.
+The main difference is that the approaches to enhance randomization granularity proposed by \citeauthor{Shacham2004} are mainly based on sub-page randomization inside of memory objects such as shared libraries whereas \citeauthor{MarcoGisbert2016} try to improve randomization on an object-level granularity by removing or at least minimizing correlations between memory objects.
+
 \begin{itemize}
 	\item{Randomized on program startup}
 	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
