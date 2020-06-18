@@ -116,6 +116,41 @@ This approach still has higher entropy than default Linux \gls{aslr} or PaX-\gls
 Similar to the suggestions of \citeauthor{Shacham2004}, \citeauthor{MarcoGisbert2016} propose finer randomization granularity.
 The main difference is that the approaches to enhance randomization granularity proposed by \citeauthor{Shacham2004} are mainly based on sub-page randomization inside of memory objects such as shared libraries whereas \citeauthor{MarcoGisbert2016} try to improve randomization on an object-level granularity by removing or at least minimizing correlations between memory objects.
 
+\subsection{\textsc{RuntimeASLR}}
+\label{subsec:runtimeaslr}
+
+\textsc{RuntimeASLR} as proposed by \citeauthor{Lu2016} in \citeyear{Lu2016} aims to prevent information leaking by clone-probing or stack reading as described in \cref{subsec:bf-information-leaking} by re-randomizing addresses on a call to \texttt{fork}.
+
+As the child process is working on an exact copy of the parent process's address space after fork, any addresses and pointers in the child process's address space have to be replaced on re-randomization.
+Thus, \textsc{RuntimeASLR} consists of three steps.
+Firstly, \emph{taint policies} have to be established in order to find and track pointers in memory.
+Tainting means keeping track of data and depending on the operations and the current marking, a value is either marked or unmarked after a certain operation which transforms the data into a pointer or destroys the pointer property, respectively.
+The taint policies define when to mark or unmark data as a pointer.
+Secondly, based on the taint policies generated in the first step, pointers in memory are tracked.
+On the one hand, missing a single pointer can lead to program crashes after re-randomization, as it may then point into invalid memory regions and cause memory violations such as a \gls{segfault}.
+On the other hand, accidentally marking normal data as a pointer and manipulating it on re-randomization may lead to unexpected results, bugs and errors.
+Therefore, it is important that the taint policies are established very carefully and tested thoroughly.
+The third and last step is to replace any pointers in memory by their re-randomized counterparts based on the tracked pointers from the second step when forking a child process \cite[3\psq]{Lu2016}.
+
+The first two steps are carried out by binary instrumentation with the Pin framework developed and distributed by Intel \cites{Levi2018}[3\psq]{Lu2016}.
+As tracking all pointers and any memory access incurs performance overhead to the executable, Pin is detached in the third step from the child process in order to run the child process with no performance overhead at all.
+Thus, only the parent process may experience slowdowns because of pointer tracking \cite[4,11\psqq]{Lu2016}.
+This approach implies that child processes forking again will not re-randomize their respective child processes' address spaces and those are thus not protected against clone-probing attacks.
+For this reason, a feature to configure which layer of child processes should enable or disable instrumentation for pointer tracking is included in the authors' proposal \cite[9]{Lu2016}.
+
+In their performance measurements, \citeauthor{Lu2016} found that when looking at a forking web server, a maximum overhead of 0.51\% for response time and 0.5\% for throughput was incurred.
+They conclude from their measurements that this performance penalty may well be due to measurement inaccuracy and thus no real performance difference is measurable \cite[11\psq]{Lu2016}.
+In contrast, when looking at the performance overhead for a single \texttt{fork} call or benchmarking suites such as the \gls{spec} \acs{cpu}2006 benchmark, a performance penalty is very much measurable.
+The authors found that a single call to \texttt{fork} with \textsc{RuntimeASLR} takes about 137.5 ms, whereas the original \texttt{fork} is conducted in about 0.1 ms.
+Thus, from such a micro-benchmark point of view, \textsc{RuntimeASLR} incurs huge performance penalties to forking processes.
+This finding is also supported by the results of the \gls{spec} \acs{cpu}2006 benchmark where runtimes are multiplied by almost 25,000 in the worst case \cite[12]{Lu2016}.
+
+During the performance evaluation and the discussion of their results, \citeauthor{Lu2016} conclude that even those huge performance penalties are negligible for the use-case they developed \textsc{RuntimeASLR} for.
+The target for such \gls{aslr} enhancements are forking server daemons that are vulnerable to clone-probing attacks.
+As such daemons often have a pre-forking approach, meaning that they already fork child processes during startup and not only on incoming requests and as such daemons usually offload extensive calculations to the child processes which are not subject to performance overhead, only the startup of such a daemon and its child processes may take longer than usual.
+As soon as it is running, however, performance overhead is negligible.
+Still, the authors conclude that their approach is not suitable for all general-purpose programs, as pointer tracking might incur too much performance overhead in the base process \cite[12\psq]{Lu2016}.
+
 \begin{itemize}
 	\item{Randomized on program startup}
 	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
