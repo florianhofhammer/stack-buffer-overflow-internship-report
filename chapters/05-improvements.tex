@@ -189,11 +189,47 @@ Therefore, it is important to deploy such protection only in cases like describe
 Of course, adding additional instructions and code to be executed when forking a process incurs a performance overhead in comparison to the original implementation.
 However, as their code is very lightweight, \citeauthor{MarcoGisbert2013} could not measure any performance overhead apart from statistical variability caused by external factors such as processor scheduling and \gls{os} when benchmarking the Apache web server with some pre-forked child processes and dynamically forked additional child processes \cite[249\psq]{MarcoGisbert2013}.
 
-\begin{itemize}
-	\item{Random canary created on program startup}
-	\item{Same canary for all functions $\Rightarrow$ canary disclosure in one function makes all other functions vulnerable}
-	\item{Clone-probing attacks: no new randomization on \texttt{fork}}
-\end{itemize}
+\subsection{Dynamic canary randomization}
+\label{subsec:dynamic-canary-randomization}
+
+\Citeauthor{Hawkins2016} propose a different approach for re-randomizing stack canaries.
+Instead of replacing the canary reference value and only using it in subsequent function prologues and epilogues, they suggest replacing the stack canary in any stack frames and as such also for functions earlier in the call chain.
+Of course, such an approach is computationally difficult, as it must not miss any canaries during replacement in order to not make the corresponding function crash when its canary is compared to the reference value.
+Additionally, it must not replace any values other than canaries with the new value, as this could lead to bugs or information leakage if an adversary can access such a replaced value.
+In order to tackle this problem, the authors suggest maintaining a linked list of all the canaries on the stack.
+This linking is achieved by embedding an offset into the canary value \cite{Hawkins2016}.
+
+Specifically, part of the canary value is used as an offset to the previous canary on the stack.
+This offset always is the difference of the two canaries' addresses so that adding the offset of a canary to its address yields the address of the next canary.
+Addition is necessary because the stack is growing downwards in address space so that stack canaries of earlier stack frames are located at higher addresses.
+Because some bytes of the canary values on the stack are used for the offset, those bytes are also don't have to be randomized in the reference value.
+Instead, the reference stack canary in those bytes holds the sum of all the offsets, initialized with \texttt{0x00} bytes on program startup.
+This allows for fast iteration over all canaries on the stack.
+Starting with the canary of the current stack frame, iteration runs over all canaries by adding the respective offset to the address and thus calculating the address of the canary in the previous stack frame.
+On each such addition, the offset is subtracted from the reference canary value's offset bytes and the canary is checked for correctness.
+This allows to check all the canaries for integrity during iteration so that the execution of the process could be aborted if tampering on previous canaries is detected.
+This fast iteration also allows to replace canary values easily and at the same time keeping the offsets intact to keep the linked list for further iterations \cite{Hawkins2016}.
+
+With this approach, stack canary re-randomization is not only feasible in forking daemon processes as proposed by \citeauthor{MarcoGisbert2013} \cite{MarcoGisbert2013} but also in general-purpose software that returns to earlier stack frames.
+Additionally, such re-randomization can be triggered at any point in the execution and not only on forking.
+The implementation of the approach by \citeauthor{Hawkins2016} differs from the implementation presented by \citeauthor{MarcoGisbert2013} in that it does not modify a library or override library functions by pre-loading a shared library but that the binary to be protected by stack canaries is statically rewritten.
+With the help of a static binary rewriter, the function prologues and epilogues where stack canaries are set up and checked are replaced with custom prologues and epilogues accounting for the extended functionality.
+The static rewriter also allows to define criteria on when to re-randomize the stack canary value \cite{Hawkins2016}.
+
+Performance-wise, the performance impact depends on the frequency of rewriting the stack canaries on the stack.
+The more often they are rewritten, the higher the performance impact.
+Still, the authors suggest that performance overhead in fact is pretty low and that most of the overhead is due to the static rewriting of the binary.
+In an example, they look at \emph{bzip2}, a compression and decompression software.
+When re-randomizing the \gls{ssp} value on every \texttt{memcpy}, the overhead is 16.08\% with 13.33\% of the overhead being due to the static binary rewriter.
+Thus, the actual runtime overhead is at 2.75\%.
+Additionally, \citeauthor{Hawkins2016} ran the \gls{spec} \acs{cpu}2006 benchmarks with and without their canary implementation applied.
+The results vary strongly between executables and overhead in comparison to the default \gls{ssp} implementation ranges from basically no overhead to a maximum of about 250\% \cite{Hawkins2016}.
+In most cases, however, overhead is low to almost nonexistent.
+If in addition the overhead from static rewriting is deducted from the total overhead, runtime overhead is seen to be very low.
+As mentioned above, runtime overhead mostly depends on re-randomization frequency because the whole linked list has to be modified in that case.
+Thus, it is not easily possible to determine performance overhead, as it strongly depends on the user-chosen re-randomization frequency as well as on the statically rewritten binary.
+
+\todo[inline]{TODO: Subsection about PESC: per system call canary}
 
 \section{Function pointer protection}
 \label{sec:function-pointer-protection-improvements}
