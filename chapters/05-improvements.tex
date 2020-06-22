@@ -202,7 +202,7 @@ This linking is achieved by embedding an offset into the canary value \cite{Hawk
 Specifically, part of the canary value is used as an offset to the previous canary on the stack.
 This offset always is the difference of the two canaries' addresses so that adding the offset of a canary to its address yields the address of the next canary.
 Addition is necessary because the stack is growing downwards in address space so that stack canaries of earlier stack frames are located at higher addresses.
-Because some bytes of the canary values on the stack are used for the offset, those bytes are also don't have to be randomized in the reference value.
+Because some bytes of the canary values on the stack are used for the offset, those bytes also don't have to be randomized in the reference value.
 Instead, the reference stack canary in those bytes holds the sum of all the offsets, initialized with \texttt{0x00} bytes on program startup.
 This allows for fast iteration over all canaries on the stack.
 Starting with the canary of the current stack frame, iteration runs over all canaries by adding the respective offset to the address and thus calculating the address of the canary in the previous stack frame.
