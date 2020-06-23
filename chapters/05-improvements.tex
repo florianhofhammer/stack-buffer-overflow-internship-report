@@ -229,7 +229,104 @@ If in addition the overhead from static rewriting is deducted from the total ove
 As mentioned above, runtime overhead mostly depends on re-randomization frequency because the whole linked list has to be modified in that case.
 Thus, it is not easily possible to determine performance overhead, as it strongly depends on the user-chosen re-randomization frequency as well as on the statically rewritten binary.
 
-\todo[inline]{TODO: Subsection about PESC: per system call canary}
+\subsection{Polymorphic canaries}
+\label{subsec:polymorphic-canaries}
+
+In \citeyear{Wang2018}, \citeauthor{Wang2018} presented another approach on how to improve the security implications of stack canaries and make them less vulnerable to information leakage through attacks like \hyperref[subsec:bf-information-leaking]{clone-probing}.
+The authors conclude that the problem with current stack canary implementations is that leaking a single canary value from the stack reveals the reference canary value stored in the \gls{tls} and thus renders all other canary values on the stack useless.
+Measures such as replacing the reference canary value in the \gls{tls} like for example described in \cref{subsec:renewssp,subsec:dynamic-canary-randomization} usually imply that either functions in the call chain that had their stack frames set up before the re-randomization cannot be returned to without failing canary validation or that a list of canaries on the stack has to be managed in order to replace them all.
+The \emph{polymorphic canaries} approach aims to overcome such implications by providing a means to keep the reference canary value in the \gls{tls} secret by not copying it to the stack at any time and to derive the actual canary value on the stack from the secret reference canary value in the \gls{tls} \cite[244\psq]{Wang2018}.
+They call their \gls{ssp} implementation \emph{\gls{pssp}} \cite[243]{Wang2018}.
+
+\subsubsection{\glsentryshort{pssp} main design}
+\label{subsubsec:p-ssp-main-design}
+
+The main idea is to keep the reference value \textbf{C} in the \gls{tls} the same while putting on the stack not a single 8 byte (\texttt{x86\_64}) canary value but two 8 byte values $ C_0,C_1 $ which result in the reference value when applying a \acs{xor} operation, that is $ \textbf{C} = C_0 \oplus C_1 $.
+Such a pair $ (C_0, C_1) $ can be generated randomly at any time and is stored in the \gls{tls} as a so-called ``\emph{\acs{tls} shadow canary}'' \cite[246]{Wang2018}.
+Instead of copying the actual canary value onto the stack in the function prologue, the concatenation $ C_0 || C_1 $ is copied onto the stack.
+When checking the canary value for integrity in the function epilogue, the values on the stack are \acs{xor}ed together and the result is compared with the actual canary reference value in the \gls{tls} \cite[245\psq]{Wang2018}.
+Thus, it is easy to deploy a new stack canary value to prevent clone-probing attacks by simply regenerating randomly a pair $ (C_0, C_1) $.
+Integrity checks on stack canaries from earlier stack frames still succeed, as not the actual value on the stack is checked for but the \acs{xor}ed value of the two 8 byte values on the stack and the \acs{xor} result is still the same.
+For clone-probing prevention, it makes sense to redeploy new \acs{tls} shadow canary values in a child process after calling \texttt{fork}.
+However, the main approach as described allows regenerating $ C_0, C_1 $ at any time without breaking integrity checks.
+
+\Citeauthor{Wang2018} also propose three variants of the main \gls{pssp} approach.
+
+\subsubsection{\glsentryshort{pssp} without modifying the \glsentryshort{tls}}
+\label{subsubsec:p-ssp-nt}
+
+Firstly, they present the \emph{\acs{pssp}-NT} variant.
+In this variation of the original idea, the \acs{tls} shadow canary is omitted, that is the pair $ (C_0, C_1) $ is not stored in the \gls{tls} and copied onto the stack as needed.
+Instead, a pair $ C_0, C_1) $ is generated on the fly when calling a \acs{ssp}-protected function and directly put onto the stack.
+Thus, the stack canary value $ C_0 || C_1 $ on the stack differs between stack frames and if generated truly randomly only appears more than once in different stack frames with negligible probability.
+An advantage of this approach is that it is not necessary to hook into specific function calls such as \texttt{fork} to regenerate the \acs{tls} shadow canary, as it is re-randomized during every function prologue.
+A disadvantage, however, is the performance overhead induced by random value generation during every function prologue \cite[247]{Wang2018}.
+
+\subsubsection{Protecting local variables with \glsentryshort{pssp}}
+\label{subsubsec:p-ssp-lv}
+
+Secondly, \citeauthor{Wang2018} propose the \emph{\acs{pssp}-LV} variant of \gls{pssp}.
+The goal here is to not only protect control flow information such as \gls{sfp} and \gls{rip} but also critical local variables such as function pointers from being overwritten.
+Again, this approach does not depend on a pair $ (C_0, C_1) $ being stored in the \gls{tls}.
+Instead, a random 8 byte value is pushed onto the stack in front of any variable to protect on the stack, including the control flow information.
+For the last canary value to be placed on the stack, the value $ C_j = \textbf{C} \oplus C_0 \oplus C_1 \oplus \cdots \oplus C_{j - 1} $ is calculated.
+Thus, when checking the integrity in the function epilogue, a single modified canary value would change the end result and the comparison of the \acs{xor} result $ \bigoplus_{i = 0}^{j}{C_i} $ would differ from \textbf{C}.
+Therefore, not only control flow information but also local variables can be protected from being overwritten with \acs{pssp}-LV.
+Still, it is important to note that the random value generation incurs a performance overhead and not the local variables' values are protected but it can only be detected that they have been overwritten at the end of the function and only their memory layout is protected \cite[247]{Wang2018}.
+Thus, if a protected function pointer is overwritten somewhere in the function and the corresponding function is evaluated before the containing function returns, control flow can already be diverted by an attacker with by misusing the function pointer and manipulation is only detected when the canary integrity is checked.
+
+\subsubsection{Stack canary exposure resilience}
+\label{subsubsec:p-ssp-owf}
+
+Lastly, the \emph{\acs{pssp}-OWF} variant is presented where OWF denotes the term ``one-way function''.
+The idea is to create an individual nonce $ n $ for every function and putting the nonce as well as a canary $ C $ calculated by $ C = \mathcal{F} \left( ret || n, \textbf{C} \right) $ with $ ret $ being the return address / \gls{rip} on the stack.
+$ \mathcal{F} $ here denotes a one-way function such as a hash function or an encryption function \cite[247\psq]{Wang2018}.
+As this function has to be evaluated in every function prologue and epilogue in order to check the canary value for integrity, it incurs a significant overhead.
+For this reason, \citeauthor{Wang2018} suggest $ \mathcal{F} $ being the \gls{aes} encryption with return address and nonce being encrypted by the canary used as encryption key, as modern processors often provide hardware-accelerated encryption operations and thus low overhead \cite[248,251]{Wang2018}.
+
+The goal behind this approach is to provide return address integrity and stack canary secrecy in a combined function.
+With the key (the reference canary value in the \gls{tls}) not being put on the stack at any point in time, an attacker cannot read it from the stack by clone-probing.
+\Gls{aes} keeps the key secret, even when the plaintext ($ ret || n $) is known.
+As the plaintext changes with every function call because of a changing nonce, the ciphertext and thus the stack canary also changes.
+Thus, protection against stack reading is provided.
+Even if the stack canary could somehow be bypassed and nonce and return address overwritten, an attacker would have to select \gls{rip} and nonce in such a way that their encryption with the unknown \gls{tls} reference canary value would yield the same ciphertext as the original values.
+Without knowledge of the key, such an attack is basically unfeasible \cite[251]{Wang2018}.
+
+\bigskip\noindent
+\Citeauthor{Wang2018} implement their approaches in different ways.
+The main design can either be implemented as a compiler plugin or via binary instrumentation.
+In both cases, a shared library is used for overriding library functions if the original libraries are supposed to be left unmodified.
+The implementation as a compiler plugin is not too complicated because the necessary function prologues and epilogues can be directly emitted by the compiler and the compiler can integrate necessary changes to the \gls{tls}, offsets in the resulting binary, stack layout, etc. into the compilation process.
+If the shared libraries such as \gls{glibc} are not modified, it is also necessary to create a pre-loaded shared library that hooks into functions such as \texttt{fork} to re-randomize \acs{tls} shadow canaries \cite[248\psq]{Wang2018}.
+Implementing \gls{pssp} via binary instrumentation is possible but a little bit more difficult.
+The approach here is to replace compiler-generated function prologues and epilogues putting a \gls{ssp} onto the stack and checking its integrity with function prologues and epilogues accounting for \gls{pssp} stack canaries.
+Because offsets and addresses in the executable have to remain unchanged to not disrupt execution, the stack layout and binary layout mustn't change.
+This implies shortening $ C_0, C_1 $ from 64 bit to 32 bit each so that their concatenation $ C_0 || C_1 $ results in a 64 bit stack canary just like the original stack canary.
+Additionally, the prologues and epilogues mustn't change in length.
+Thus, because of additional necessary calculations, parts of the integrity check are put into the \texttt{\_\_stack\_chk\_fail} function which originally only is called when the integrity check failed and aborts execution.
+Because of this necessity, a shared library is needed to override this function \cite[249\psq]{Wang2018}.
+In both cases, compile process modification or binary instrumentation, overriding functions with pre-loaded shared libraries is not possible if the executable is compiled statically.
+In such cases, the authors suggest appending custom functions to the executable by binary rewriting and instrumenting the original functions in such a way that they only jump to the custom implementations \cite[250]{Wang2018}.
+
+Implementation of \acs{pssp}-NT and \acs{pssp}-OWF is conducted solely with the help of a compiler plugin.
+As they don't rely on a \acs{tls} shadow canary, no change to library functions to re-randomize canaries or account for a changed \gls{tls} layout is necessary.
+Thus, only the corresponding function prologues and epilogues have to be emitted by the compiler.
+The \acs{pssp}-LV variant, however, is more complicated to implement, as compilers usually reorder variables on the stack for improved efficiency or security and the protecting canaries also have to be taken into account in such cases.
+Additionally, a point in time where canary integrity is checked has to be defined in order to prevent control flow diversion before checking the canaries on returning from the function as described \hyperref[subsubsec:p-ssp-lv]{in the paragraph about \acs{pssp}-LV above}.
+Those complications have led the authors to postpone \acs{pssp}-LV implementation to future work \cite[250\psq]{Wang2018}.
+
+Concerning the overhead introduced by their implementations, \citeauthor{Wang2018} report an average performance overhead of 0.24\% for compiler based \gls{pssp} and 1.01\% for instrumentation based \gls{pssp}, with a peak performance penalty of about 2.5\% for compiler based \acs{pssp}-NT in a single executable in the \gls{spec} \acs{cpu}2006 benchmark suite \cite[252]{Wang2018}.
+When looking at \gls{cpu} cycle overhead, they report a mere 6 \gls{cpu} cycles for function prologue and epilogue of \gls{pssp} and up to 278 and 343 cycles for \acs{pssp}-OWF and \acs{pssp}-NT, respectively.
+The overhead for \acs{pssp}-LV depends on the number of variables to protect and thus on the number of random protection values to generate.
+As argued by the authors, the overhead for \acs{pssp}-LV is nearly linear in the number of protected variables with their measurements showing an overhead of about 300 \acs{cpu} cycles per random number.
+The authors conclude that the overhead for \gls{pssp}, \acs{pssp}-NT and \acs{pssp}-OWF is negligible, as they account for less than 100 nanoseconds on modern \glspl{cpu} \cite[252\psq]{Wang2018}.
+This conclusion is supported by performance measurements on web and database servers such as Apache2%
+	\footnote{Project website \href{https://httpd.apache.org}{httpd.apache.org}}%
+, NGINX%
+	\footnote{Project website \href{https://www.nginx.com}{www.nginx.com}}
+or MySQL%
+	\footnote{Project website \href{https://www.mysql.com}{www.mysql.com}}
+which, if at all, show performance overhead not perceivable by a user (less than 100 nanoseconds in the worst case) \cite[252\psq]{Wang2018}.
 
 \section{Function pointer protection}
 \label{sec:function-pointer-protection-improvements}
