@@ -23,7 +23,7 @@ In \citeyear{Shacham2004}, \citeauthor{Shacham2004} analyzed the \gls{aslr} func
 In this report, we were generally referring to the \gls{aslr} functionality natively included in the Linux kernel.
 However, as the PaX patches haven't been updated since Linux kernel 3.6 in 2012 \cite{PaXTeam} and the base functionality is similar, it is possible to transfer suggestions on how to improve PaX \gls{aslr} onto the Linux kernel \gls{aslr}.
 
-An important proposal of \citeauthor{Shacham2004} is to increase the granularity of address randomization.
+An important proposal by \citeauthor{Shacham2004} is to increase the granularity of address randomization.
 Instead of just randomizing the base address of code and libraries they suggest to also randomize the order of variables and functions either at compile time or at runtime \cite[303\psq]{Shacham2004}.
 
 \subsubsection{Compile time randomization}
@@ -113,7 +113,7 @@ Apart from that, they suggest reserving a certain part of the virtual memory for
 This approach still has higher entropy than default Linux \gls{aslr} or PaX-\gls{aslr} \cite[10\psq]{MarcoGisbert2016} and thus provides additional security.
 
 \bigskip\noindent
-Similar to the suggestions of \citeauthor{Shacham2004}, \citeauthor{MarcoGisbert2016} propose finer randomization granularity.
+Similar to the suggestions by \citeauthor{Shacham2004}, \citeauthor{MarcoGisbert2016} propose finer randomization granularity.
 The main difference is that the approaches to enhance randomization granularity proposed by \citeauthor{Shacham2004} are mainly based on sub-page randomization inside of memory objects such as shared libraries whereas \citeauthor{MarcoGisbert2016} try to improve randomization on an object-level granularity by removing or at least minimizing correlations between memory objects.
 
 \subsection{\textsc{RuntimeASLR}}
@@ -328,21 +328,150 @@ or MySQL%
 	\footnote{Project website \href{https://www.mysql.com}{www.mysql.com}}
 which, if at all, show performance overhead not perceivable by a user (less than 100 nanoseconds in the worst case) \cite[252\psq]{Wang2018}.
 
+\section{\glsentrylong{cfi} (\glsentryshort{cfi})}
+\label{sec:control-flow-integrity}
+
+\gls{cfi} follows a completely different approach than measures described before, such as \gls{aslr} or stack canaries.
+Instead of relying on low probabilities of success as it is the case with address randomization (\gls{aslr}) or random protector values (\gls{ssp} / stack canaries), \gls{cfi} protects a process's control flow deterministically.
+
+In the following two sections, we first present the original \gls{cfi} proposal by \citeauthor{Abadi2005} \cite{Abadi2005}.
+We then present a state of the art implementation by the \citeauthor{IntelCorporation2019} which is implemented with hardware support and thus aims to provide highly secured \gls{cfi} measures with low overhead \cite{IntelCorporation2019}.
+
+\subsection{\glsentryshort{cfi} enforcement principle}
+\label{subsec:cfi-principle}
+
+In their \citeyear{Abadi2005} paper titled \citetitle{Abadi2005}, \citeauthor{Abadi2005} first present their \gls{cfi} enforcement approach including an implementation and then show further use cases for which their \gls{cfi} enforcement approach can provide an efficient basis.
+In this paper, we will focus on their general \gls{cfi} enforcement approach and on its symbiosis with a shadow call stack as described by the authors.
+
+\subsubsection{\glsentryshort{cfi} enforcement main design}
+\label{subsubsec:cfi-main-design}
+
+\Gls{cfi} enforcement generally aims to enforce control flow to follow paths in a \gls{cfg} determined before execution whilst neither executing code that is not part of the \gls{cfg} nor diverting control flow to code that is not designated as a valid target in the \gls{cfg}.
+In such a \gls{cfg}, nodes are continuous code snippets and edges connect those code snippets in case of branches, function calls, or similar situations.
+It is important to differentiate between \emph{static} and \emph{dynamic} targets of an edge in the \gls{cfg}.
+Static targets can be for example functions that are invoked by a hard-coded function call in the binary.
+As the target address is fixed in the executable binary, there is no possibility for an attacker to divert control flow by changing the target address of such a function call when applying the \gls{wxorx} policy.
+Dynamic targets on the other side are determined at runtime.
+This may be the case with branches or function calls that are evaluated depending on conditions and where the \texttt{jmp} or \texttt{call} instructions are executed with regard to register or data memory contents instead of having their targets hard-coded into the binary.
+Even though the possible targets may be known ahead of time, modification of the target address by an attacker might be possible.
+Thus, it is necessary to dynamically check at runtime whether control flow in such cases still follows a predetermined path in the \gls{cfg} \cite[340\psq, 343]{Abadi2005}.
+
+\Citeauthor{Abadi2005} suggest checking whether a target of a control transferring instruction is a valid target in the sense of the \gls{cfg} by introducing labels that are checked before actually transferring control to the target.
+If two targets or destinations are equivalent, that is to say that they have the same set of control transferring sources, their respective labels or \glspl{id} are the same.
+A label is inserted into the machine code in front of the corresponding control transfer target.
+Before transferring control, the destination's \gls{id} is loaded and compared with the \gls{id} encoded in the binary machine code at the source.
+If the two \glspl{id} differ, execution is aborted.
+Otherwise, the indirect jump or function call is executed as expected.
+The same approach applies for function returns.
+After each \texttt{call} instruction, an \gls{id} is inserted which is checked before returning from the called function.
+It is important to note that the \glspl{id} chosen have to be unique if the corresponding targets are not equivalent and should not collide with \gls{opcode} encoding in the binary \cite[343\psqq]{Abadi2005}.
+
+\todo{Syntax highlighting in assembly code}
+\begin{lstlisting}[float=ht,caption={Function call without and with \acs{cfi} enforcement according to the implementation of {\citeauthor{Abadi2005}} (own code based on {\cite[343\psqq]{Abadi2005}})},label={lst:cfi-function-call}]
+; Without CFI enforcement
+call 0x8(%rbx)              ; call fptr
+
+; With CFI enforcement
+mov 0x8(%rbx), %rax         ; load fptr
+cmp 0x4(%rax), $0x12345678  ; cmp w/ ID
+jne error_label             ; if != fail
+call %rax                   ; call fptr
+prefetchnta aabbccdd        ; label ID for ret
+\end{lstlisting}
+
+\begin{lstlisting}[float=ht,caption={Return from function without and with \acs{cfi} enforcement according to the implementation of {\citeauthor{Abadi2005}} (own code based on {\cite[343\psqq]{Abadi2005}})},label={lst:cfi-function-return}]
+; Without CFI enforcement
+; Function body here
+ret                         ; return
+
+; With CFI enforcement
+prefetchnta 12345678        ; label ID for call
+; Function body here
+mov (%rsp), %rcx            ; load ret address
+cmp 0x4(%rcx), $0xaabbccdd  ; cmp w/ ID
+jne error_label             ; if != fail
+jmp %rcx                    ; jump to ret. addr.
+\end{lstlisting}
+
+\Cref{lst:cfi-function-call,lst:cfi-function-return} show how an implementation of \gls{cfi} enforcement could look like.
+Before calling a function dynamically, the \gls{id} is checked.
+Also, another \gls{id} is checked before returning from the called function.
+The 32 bit labels are implemented via the side-effect-free \texttt{prefetchnta} instruction which provides a hint to the \gls{cpu} which data to prefetch into the processor cache.
+The 4 byte offset from the address for the comparison (line 6 in \cref{lst:cfi-function-call} and line 9 in \cref{lst:cfi-function-return}) is caused by the 4 byte \gls{opcode} encoding of the \texttt{prefetchnta} instruction \cites[343\psqq]{Abadi2005}[4-406\psq]{IntelCorporation2020}.
+
+Through such checks, control flow following a path from the \gls{cfg} is enforced if the labels are derived from the \gls{cfg} correctly.
+
+\subsubsection{Extending \glsentryshort{cfi} enforcement with a shadow call stack}
+\label{subsubsec:cfi-shadow-stack}
+
+As a function may be called by several other functions and thus return to different functions, \gls{cfi} enforcement as described above can just guarantee that the function returns to a valid target in the \gls{cfg}.
+However, it may still be the wrong function that is returned to, as the same label for return target checking may occur more than once in different functions.
+Therefore, complementing \gls{cfi} enforcement as described before with a \emph{shadow call stack} can help ensuring that the return target is correct.
+A shadow call stack here means a second stack complementing the stack where data such as local variables are stored.
+The goal is to separate control flow information from data so that overflowing buffers in data cannot modify control flow information.
+Thus, control flow information such as return addresses and stack frame pointers are protected from being overflown \cite[348\psqq]{Abadi2005}.
+
+\Citeauthor{Abadi2005} propose using the \texttt{gs} segment register to reference a protected memory segment which holds the shadow stack.
+In their implementation, the offset to the top of the stack is stored at the segment base (i.e. at \texttt{\%gs:0x0}).
+The return address is put onto the shadow stack before executing a \texttt{call} instruction.
+This \texttt{call} instruction still pushes the return address on the default data stack but when returning from the called function, the return address from the data stack is omitted and the return address from the shadow stack is taken instead \cite[348\psq]{Abadi2005}.
+This functionality is shown in \cref{lst:cfi-shadow-stack-function-call,lst:cfi-shadow-stack-function-return}.
+
+\begin{lstlisting}[float=ht,caption={Function call without and with \acs{cfi} enforcement and shadow stack usage according to the implementation of {\citeauthor{Abadi2005}} (own code based on {\cite[348\psqq]{Abadi2005}})},label={lst:cfi-shadow-stack-function-call}]
+; Without CFI enforcement
+      call %rax                   ; call fptr
+
+; With CFI enforcement
+      add $0x8, %gs:0x0           ; inc. shadow stack by 8
+      mov %gs:0x0, %rcx           ; get stack top offset
+      mov LRET, %gs:%rcx          ; push ret. addr. onto stack
+      cmp 0x4(%rax), $0x12345678  ; cmp w/ ID
+      jne error_label             ; if != fail
+      call %rax                   ; call fptr
+LRET: ...
+\end{lstlisting}
+
+\begin{lstlisting}[float=ht,caption={Return from function without and with \acs{cfi} enforcement and shadow stack usage according to the implementation of {\citeauthor{Abadi2005}} (own code based on {\cite[348\psqq]{Abadi2005}})},label={lst:cfi-shadow-stack-function-return}]
+; Without CFI enforcement
+; Function body here
+ret                   ; return
+
+; With CFI enforcement
+prefetchnta 12345678  ; label ID for call
+; Function body here
+mov %gs:0x0, %rcx     ; get shadow stack top offset
+mov %gs:%rcx, %rcx    ; pop ret. addr. from shadow stack
+sub $0x8, %gs:0x0     ; dec. shadow stack by 8
+add $0x8, %rsp        ; skip ret. addr. on data stack
+jmp %rcx              ; jump to ret. addr.
+\end{lstlisting}
+
+The security implication of this approach comes from the combination of \gls{cfi} and shadow stack.
+While the shadow stack protects backward edges in the \gls{cfg} such as function returns, \gls{cfi} enforcement protects forward edges such as indirect jumps or function calls.
+Additionally, \gls{cfi} enforcement not allowing forward jumps to arbitrary locations can prevent an adversary from targeting instructions that modify the shadow stack by referencing the corresponding memory segment.
+Thus, the integrity of the backward edges is protected by \gls{cfi} enforcement and the two measures complement each other to protect both forward and backward edges \cite[348\psq]{Abadi2005}.
+
+\bigskip\noindent
+\Citeauthor{Abadi2005} implement their \gls{cfi} enforcement approach on the 32 bit Windows \gls{os} via static binary rewriting \cite[345\psq]{Abadi2005}.
+However, the examples shown in \cref{lst:cfi-function-call,lst:cfi-function-return,lst:cfi-shadow-stack-function-call,lst:cfi-shadow-stack-function-return} do not rely on instructions or behavior specific to 32 bit Windows so that the code in the listings is ported to 64 bit \texttt{x86\_64} instructions and can also be used on Linux.
+
+Performance impact of the \gls{cfi} enforcement and shadow stack implementations is measured with the \gls{spec} \acs{cpu}2000 benchmark.
+With this benchmark suite, an average performance overhead of 16\% for \gls{cfi} enforcement and 21\% for the combination of \gls{cfi} enforcement and shadow stack can be observed.
+The authors suggest that such an overhead is tolerable and that the overhead may drop due to optimizations in the instrumentation \cite[346\psq,349\psq]{Abadi2005}.
+However, in comparison to security measures presented in previous sections, this overhead is highly significant and thus may hinder successful adoption.
+
+\subsection{Intel \glsentryshort{cet}}
+\label{subsec:cfi-intel-cet}
+
 \section{Function pointer protection}
 \label{sec:function-pointer-protection-improvements}
+
+\todo[inline]{Only if enough time left $\Rightarrow$ not a lot of specific approaches, most approaches are combination of better randomization (similar to ASLR), secure memory regions (similar to CFI shadow stack)}
 
 \begin{itemize}
 	\item{Encryption}
 	\item{Mangling}
 	\item{Stored in protected memory regions}
-\end{itemize}
-
-\section{\glsentrylong{cfi} (\glsentryshort{cfi})}
-\label{sec:control-flow-integrity}
-
-\begin{itemize}
-	\item{\gls{cfi} => overhead?}
-	\item{Intel CET $\Rightarrow$ shadow stack, branch validation}
 \end{itemize}
 
 \section{Performance comparison of presented approaches}
