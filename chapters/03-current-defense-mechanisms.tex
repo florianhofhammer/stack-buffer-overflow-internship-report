@@ -45,7 +45,7 @@ In the example seen in \cref{lst:optimization,lst:optimization-disassembly,lst:o
 
 \lstinputlisting[language=C,float=ht,caption={C program copying \texttt{argv[1]} into a function-local buffer},label={lst:optimization}]{code/optimization.c}
 
-\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:optimization} with \texttt{gcc -o copy optimization.c -fno-stack-protector}, retrieved with \texttt{objdump -D --no-show-raw-insn copy}}, label={lst:optimization-disassembly}]
+\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:optimization} with \texttt{gcc -o copy optimization.c -fno-stack-protector}, retrieved with \texttt{objdump -D -{}-no-show-raw-insn copy}}, label={lst:optimization-disassembly}]
 0000000000001149 <copy>:
 1149:       push   %rbp
 114a:       mov    %rsp,%rbp
@@ -76,7 +76,7 @@ In the example seen in \cref{lst:optimization,lst:optimization-disassembly,lst:o
 1197:       nopw   0x0(%rax,%rax,1)
 \end{lstlisting}
 
-\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:optimization} with \texttt{gcc -o copy optimization.c -fno-stack-protector -O3}, retrieved with \texttt{objdump -D --no-show-raw-insn copy}}, label={lst:optimization-disassembly-optimized}]
+\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:optimization} with \texttt{gcc -o copy optimization.c -fno-stack-protector -O3}, retrieved with \texttt{objdump -D -{}-no-show-raw-insn copy}}, label={lst:optimization-disassembly-optimized}]
 0000000000001050 <main>:
 1050:       sub    $0x18,%rsp
 1054:       mov    0x8(%rsi),%rsi
