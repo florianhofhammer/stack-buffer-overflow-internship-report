@@ -672,10 +672,10 @@ In this section, we present an overview over the power and limitations of the di
 		\setlength{\colwidth}{1.8cm}
 		\begin{tabular}{|l|*{6}{P{\colwidth}|}}
 			\hline
-			Attack approach	& \multicolumn{6}{@{}l@{}}{
+			\textbf{Attack approach}		& \multicolumn{6}{@{}l@{}}{
 								\begin{tabular}{*{6}{p{\colwidth}|}}
-									\multicolumn{6}{l|}{Security measure}	\\ \hline
-									\texttt{\_FORTIFY\linebreak[0]\_SOURCE}	& \acs{dep} / \acs{nx} bit	& \acs{aslr} (without \acs{pie} / \acs{pic})	& \acs{aslr} (with \acs{pie} / \acs{pic})	& Stack canaries	& (full) \acs{relro}	\\
+									\multicolumn{6}{l|}{\textbf{Security measure}}	\\ \hline
+									\texttt{\_FORTIFY\linebreak[0]\_SOURCE}	& \raggedright \acs{dep} / \acs{nx} bit	& \raggedright \acs{aslr} (without \acs{pie} / \acs{pic})	& \acs{aslr} (with \acs{pie} / \acs{pic})	& Stack canaries	& (full) \acs{relro}	\\
 								\end{tabular}					
 							  } \\ \hline
 			Code injection:					&		 &		  &		   &		&		 &		  \\
@@ -727,34 +727,3 @@ Such an approach would be a combination of code reuse and code injection and cou
 
 As a conclusion, none of the approaches presented can be seen as a one-size-fits-all solution.
 However, combining them intelligently and fitting them to the actual process or program under attack can result in arbitrary code execution even on systems with modern protection mechanisms.
-
-
-
-%\section*{ToDo}
-%
-%\begin{itemize}
-%	\item{
-%		\gls{got} hijacking / overwriting (space constraints $\Rightarrow$ doesn't need as much space as shellcode or \gls{rop} chains) \cmark
-%	}
-%	\item{
-%		\gls{aslr} brute-force $\Rightarrow$ on \texttt{x86\_64} difficult because of too much entropy \cmark
-%	}
-%	\item{
-%		Return into non-radnomized memory (\gls{aslr} bypass) ret2text, ret2bss, ret2data: on non-\gls{pie} \cmark
-%	}
-%	\item{
-%		Pointer redirection: string or function pointers
-%	}
-%	\item{
-%		Integer overflows $\Rightarrow$ signedness or wrong width (e.g. \texttt{int} assignment to \texttt{char})
-%	}
-%	\item{
-%		Code injection: ret2esp, ret2ret, ret2pop, ret2eax \cmark
-%	}
-%	\item{
-%		Destructor overwriting ret2dtors $\Rightarrow$ more something for targeted overwrites like string format vulnerabilities
-%	}
-%	\item{
-%		Stack canaries: clone-probing to defeat canaries \textbf{and} \gls{aslr} \cmark
-%	}
-%\end{itemize}

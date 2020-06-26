@@ -189,12 +189,12 @@ Therefore, it is important to deploy such protection only in cases like describe
 Of course, adding additional instructions and code to be executed when forking a process incurs a performance overhead in comparison to the original implementation.
 However, as their code is very lightweight, \citeauthor{MarcoGisbert2013} could not measure any performance overhead apart from statistical variability caused by external factors such as processor scheduling and \gls{os} when benchmarking the Apache web server with some pre-forked child processes and dynamically forked additional child processes \cite[249\psq]{MarcoGisbert2013}.
 
-\subsection{Dynamic canary randomization}
+\subsection{\Glsentrylong{dcr} (\glsentryshort{dcr})}
 \label{subsec:dynamic-canary-randomization}
 
 \Citeauthor{Hawkins2016} propose a different approach for re-randomizing stack canaries.
 Instead of replacing the canary reference value and only using it in subsequent function prologues and epilogues, they suggest replacing the stack canary in any stack frames and as such also for functions earlier in the call chain.
-Of course, such an approach is computationally difficult, as it must not miss any canaries during replacement in order to not make the corresponding function crash when its canary is compared to the reference value.
+Of course, the \gls{dcr} approach is computationally difficult, as it must not miss any canaries during replacement in order to not make the corresponding function crash when its canary is compared to the reference value.
 Additionally, it must not replace any values other than canaries with the new value, as this could lead to bugs or information leakage if an adversary can access such a replaced value.
 In order to tackle this problem, the authors suggest maintaining a linked list of all the canaries on the stack.
 This linking is achieved by embedding an offset into the canary value \cite{Hawkins2016}.
@@ -548,21 +548,58 @@ For shadow stack usage, they report an average \gls{ipc} loss of 1.65\%.
 The \gls{ibt} overhead was measured using the \gls{spec} \acs{cpu}2006 benchmark suite.
 For those benchmarks, the authors don't report a specific overhead but mention that ``[n]o perceptible slowdown was measured on average'' \cite{Shanbhogue2019}.
 
-\section{Function pointer protection}
-\label{sec:function-pointer-protection-improvements}
-
-\todo[inline]{Only if enough time left $\Rightarrow$ not a lot of specific approaches, most approaches are combination of better randomization (similar to ASLR), secure memory regions (similar to CFI shadow stack)}
-
-\begin{itemize}
-	\item{Encryption}
-	\item{Mangling}
-	\item{Stored in protected memory regions}
-\end{itemize}
-
 \section{Performance comparison of presented approaches}
 \label{sec:performance-comparison}
 
-\begin{itemize}
-	\item{Table with performance overheads}
-	\item{Gather information from different papers}
-\end{itemize}
+\begin{table}[p]
+\rotatebox{90}{
+	\begin{minipage}{\textheight}
+	\centering
+	\caption{Performance impact comparison of different defense measure improvement approaches}
+	\makebox[\textwidth][c]{ % command is necessary in order to center the table correctly
+		\bgroup
+		\small
+		\def\arraystretch{1.1} % changes vertical spacing so that the table looks better
+		\begin{tabular}{|p{5.5cm}|p{5.8cm}|p{5.2cm}|p{6cm}|}
+			\hline
+			\textbf{Defense approach}	& \textbf{Performance overhead}	& \textbf{Performance measurement approach}	& \textbf{Comment}	\\ \hline
+			\acs{aslr}	&	&	&	\\
+			\tabitem{Randomization granularity}	& 0\% - 21\% \cites[117]{Bhatkar2003}[304\psq]{Shacham2004}	&	& Performance impact only provided for a similar approach, not for the approach by \citeauthor{Shacham2004} themselves	\\
+			\tabitem{\acs{aslr}v3 and \acs{aslr-ng}}	&	&	& No performance measurements provided by the authors \cites{MarcoGisbert2014}{MarcoGisbert2016}	\\
+			\tabitem{\textsc{RuntimeASLR}}	& about 0.5\% \cite[11\psq]{Lu2016}	& Web server benchmark (response time and throughput)	&	\\
+			\tabitem{\textsc{RuntimeASLR}}	& 137.4 ms per \texttt{fork} \cite[12]{Lu2016}	& \texttt{fork} micro benchmark	&	\\
+			\tabitem{\textsc{RuntimeASLR}}	& runtime multiplied by 1000 up to runtime multiplied by almost 25000 \cite[12]{Lu2016}	& \gls{spec} \acs{cpu}2006 benchmarks	& Huge overhead incurred in the main process by pointer tracking	\\ \hline
+			Stack canaries	&	&	&	\\
+			\tabitem{\gls{rafssp}}	& not measurable apart from statistical variance \cite[249\psq]{MarcoGisbert2013}	& Web server benchmark (response time and throughput)	&	\\
+			\tabitem{\gls{dcr}}	& 24\% on average \cite{Hawkins2016}	& \gls{spec} \acs{cpu}2006 benchmarks	& static binary rewriting overhead	\\
+			\tabitem{\gls{dcr}}	& 13.38\% on average \cite{Hawkins2016}	& \gls{spec} \acs{cpu}2006 benchmarks	& full \gls{dcr} (all functions protected)	\\
+			\tabitem{\gls{pssp}}	& 0.24\% on average \cite[252]{Wang2018}	& \gls{spec} \acs{cpu}2006 benchmarks	& compiler based	\\
+			\tabitem{\gls{pssp}}	& 1.01\% on average \cite[252]{Wang2018}	& \gls{spec} \acs{cpu}2006 benchmarks	& binary instrumentation based	\\ \hline
+			\acl{cfi}	&	&	&	\\
+			\tabitem{\gls{cfi} enforcement (\citeauthor{Abadi2005})}	& 16\% on average \cite[346]{Abadi2005}	& \gls{spec} \acs{cpu}2000 benchmarks	&	\\
+			\tabitem{\gls{cfi} enforcement (\citeauthor{Abadi2005})}	& 21\% on average \cite[349\psq]{Abadi2005}	& \gls{spec} \acs{cpu}2000 benchmarks	&	\\
+			\tabitem{Intel \gls{cet}}	& 1.64\% on average \cite{Shanbhogue2019}	& \gls{ipc} loss through measurements	& Only shadow stack overhead \\
+			\tabitem{Intel \gls{cet}}	& not perceptible \cite{Shanbhogue2019}	& \gls{spec} \acs{cpu}2006 benchmarks	& Only \gls{ibt} overhead \\
+			\hline
+		\end{tabular}
+		\egroup
+	}
+	\label{tab:defense-improvements-comparison}
+	\end{minipage}
+}
+\end{table}
+
+In this section, we provide an overview over the performance impact of different proposals presented in the previous sections of \cref{chp:defense-mechanism-improvements}.
+\Cref{tab:defense-improvements-comparison} shows different security improvement measures and different measurements concerning their performance, if provided by the authors.
+As performance overhead is not provided in a uniform format across the different scientific papers corresponding to the measures taken into account, the table also contains short comments and some cases are explained further in this section.
+
+Unfortunately, not for all presented approaches concrete performance overhead measurements are provided by the respective authors.
+For example, \citeauthor{Shacham2004} don't provide measurements concerning the performance impact of their \gls{aslr} improvement proposal concerning finer randomization granularity.
+Instead, they refer to the performance measurements by \citeauthor{Bhatkar2003} who in their approach independently randomize the base addresses for stack, heap, dynamically mapped libraries and static code and data from the executable.
+Even though \citeauthor{Shacham2004} state that their solution incurs a small performance penalty, they don't provide concrete numbers.
+Thus, it is only possible to reference the measurements by \citeauthor{Bhatkar2003} for comparison even though their approach is only similar to the one by \citeauthor{Shacham2004} \cites[117]{Bhatkar2003}[304\psq]{Shacham2004}.
+
+Additionally, in some cases measurements showed no overhead or the authors for example state that performance overhead is ``negligible'' \cites[250]{MarcoGisbert2013}[252\psq]{Wang2018} or that ``[n]o perceptible slowdown was measured'' \cite{Shanbhogue2019}.
+Such statements may be true depending on the performance requirements of a user who is comparing systems with and without specific security measures but one cannot deduce that no overhead is incurred by the proposed measures even though measurements show no (i.e. 0\%) performance overhead.
+If for example looking at the basic \gls{pssp} implementation, the overhead per function on average is 6 \gls{cpu} clock cycles \cite[252]{Wang2018} which on modern \glspl{cpu} with a clock speed of several gigahertz does not account for measurable overhead.
+However, it is still important to note that there is a slowdown which may play a role depending on the performance requirements imposed by a user of a system implementing such measures.
