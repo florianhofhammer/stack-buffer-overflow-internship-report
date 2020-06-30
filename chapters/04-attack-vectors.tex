@@ -342,7 +342,7 @@ Using strong trampoline gadgets and intra stack pivot gadgets, attacks similar t
 \subsection{\glsentrylong{srop} (\glsentryshort{srop})}
 \label{subsec:cr-srop}
 
-In addition to the previous code reuse approaches which were strongly based on chaining gadgets to manipulate the \acs{cpu} context, \citeauthor{Bosman2014} propose their \gls{srop} approach based on the signal handling behavior of UNIX-based and UNIX-like systems and as such also Linux.
+In addition to the previous code reuse approaches which were strongly based on chaining gadgets to manipulate the \acs{cpu} context, \citeauthor{Bosman2014} propose their \gls{srop} approach based on the signal handling behavior of Unix-based and Unix-like systems and as such also Linux.
 When a process has a pending signal, it stores the current \acs{cpu} context including register contents, flags, etc. on the stack as soon as it transitions back to user-mode, for example by returning from a \gls{syscall} (kernel mode) or being rescheduled onto a \acs{cpu}.
 Afterwards, the signal handler corresponding to the received signal is run.
 When this signal handler returns, a \texttt{sigreturn} \gls{syscall} is issued which restores the process's \acs{cpu} context from the stack in order to continue execution just as the process was supposed to \cite{Bosman2014,Kerrisk2020a}.

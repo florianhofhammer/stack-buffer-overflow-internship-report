@@ -9,11 +9,11 @@ In this chapter, some of the basic technical background to buffer overflows is e
 \section{A process's memory}
 \label{sec:process-memory}
 
-When a program is executed, it has to be loaded into the computer's main memory before the kernel can hand the control flow to the newly-created process.
+When a program is executed, it has to be loaded into the computer's main memory before the kernel can transfer control to the newly-created process.
 During that process, several sections of the \gls{elf} binary%
 	\footnote{See e.g. the \href{https://en.wikipedia.org/wiki/Executable_and_Linkable_Format}{wikipedia.org} entry for further information on \gls{elf}}
 are put straight into memory.
-For example, the \texttt{.text} section containing the actual binary instructions for the program or the \texttt{.data} and \texttt{.bss} sections holding initialized and uninitialized global variables, respectively, are allocated at the lowest memory address of the process's virtual memory space.
+For example, the \texttt{.text} section containing the actual binary instructions for the program or the \texttt{.data} and \texttt{.bss} sections holding initialized and uninitialized global variables, respectively, are allocated at the lower end of the process's virtual memory space.
 The size of those sections is already known on program initialization which is why they can be allocated without the need of spare memory to grow those memory regions.
 
 \begin{figure}[htb]
@@ -37,7 +37,7 @@ In the example of \cref{lst:memory-layout}, sizes of variables like \texttt{int 
 Thus, they can be stored on the stack by increasing the stack size by a fixed size when program flow enters the corresponding function.
 It has to be noted here that even though the contents of the \texttt{input} buffer are stored in the heap, the pointer to those contents is stored on the stack.
 
-The mapped memory is a region where files from the computers file system are mapped to directly address those files' contents just like other any other memory contents like variables or program instructions.
+The mapped memory is a region where files from the computers file system are mapped to directly address those files' contents just like any other memory contents like variables or program instructions.
 Such files can be any files accessible by the running program.
 The main usage for this feature is to map libraries into memory, for example \gls{glibc} or custom created libraries.
 
@@ -47,7 +47,7 @@ The main usage for this feature is to map libraries into memory, for example \gl
 \label{sec:stack-setup-and-usage}
 
 As shown in \cref{sec:process-memory}, the stack can contain program data with a size already known at compile time.
-It is a data structure behaving according to the \gls{lifo} principle meaning that the data on top of the stack is the data that was put on the stack last and will be removed from the stack first.
+It is a data structure behaving according to the \gls{lifo} principle meaning that the data on top of the stack is the data that was put on the stack last and will be removed from the stack first with regard to data further down on the stack.
 When a function is entered, the stack size is increased by the accumulative size of the function's variables by decrementing the stack pointer by this size.
 This is also known as ``pushing a stack frame onto the stack'' where \emph{stack frame} refers to the totality of a function's local data.
 The stack pointer is stored in the processor register \texttt{esp} (\texttt{x86}/\texttt{i386} architecture) or \texttt{rsp} (\texttt{x86\_64}/\texttt{amd64} architecture) and points to the top of the stack.
@@ -58,14 +58,14 @@ Otherwise, the memory where those variables reside was already freed by decreasi
 
 When a function is called, not only its variables are stored on the stack but also some control flow information like the \gls{rip}.
 The \gls{rip} points to the next instruction in the calling function which should be executed after the called function returns.
-This is exactly what the \texttt{call} and \texttt{ret} assembly instructions do.
+The \texttt{call} and \texttt{ret} assembly instructions manage this pointer.
 \texttt{call} pushes the address of the next instruction onto the stack and then enters the called function.
 In the called function, \texttt{ret} at the end of the function pops the saved address from the stack and continues execution at this address.
 
 Depending on the compiler configuration, there is also often a \gls{sfp} put on the stack which usually lies between the \gls{rip} and the called function's local data on the stack.
 Apart from the \texttt{esp/rsp} register, the \texttt{ebp/rbp} register can be used to address stack contents.
 At the start of a function, the current \texttt{ebp/rbp} register content is pushed onto the stack as the \gls{sfp} and the \texttt{esp/rsp} content is loaded into \texttt{ebp/rbp}.
-Throughout the function, this register's value does not change whereas the \texttt{esp/rsp} value can change through \texttt{push} or \texttt{pop} instructions as the stack pointer should always to the top of the stack.
+Throughout the function, this register's value does not change whereas the \texttt{esp/rsp} value can change through \texttt{push} or \texttt{pop} instructions as the stack pointer should always point to the top of the stack.
 The static value of the \texttt{ebp/rbp} register thus allows to address a function's stack content by fixed offsets that don't change throughout the function's code and is often referred to as \emph{frame pointer}.
 On returning from a function, the \gls{sfp} is loaded into \texttt{ebp/rbp} to allow the caller function to use its static offsets into its own stack frame again when continuing its execution.
 

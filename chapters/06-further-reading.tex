@@ -1,8 +1,75 @@
 \chapter{Related work and further reading}
 \label{chp:related-work}
 
-\begin{itemize}
-	\item{Compiler (optimizations)}
-	\item{Heap overflows}
-	\item{String format vulnerability}
-\end{itemize}
+In this chapter, we provide a short overview over a selective set of different environments and approaches to exploit and defend against memory corruption vulnerabilities such as stack buffer overflows.
+This chapter should not be seen as an exhaustive list of environments, exploits and defense mechanisms but rather as a collection of ideas on which future work and internships could focus.
+
+\section{System environment}
+\label{sec:system-environment}
+
+During the internship and the research to this paper, focus was lying on stack buffer overflow vulnerabilities on modern Linux systems, the \acl{glibc} and C code compiled with the \acl{gcc} (cf. \cref{sec:system-model}).
+
+Firstly, focusing on the Windows \gls{os} instead of Linux, different types of exploits become possible or impossible because of the intrinsic behavior of the \gls{os}.
+As Windows does not include signal handling according to Unix-like behavior or the \gls{posix} standard like Linux does, attacks such as \gls{srop} based on a stack buffer overflow become impossible.
+However, other attack vectors such as overwriting pointers to exception handlers used for Windows's \gls{seh} principle and specifically triggering a corresponding exception afterwards can divert control flow on Windows \cite{CorelanTeam2009}.
+
+Secondly, even though different C standard library implementations have to adhere to an external interface which programs linking against the standard library can use, their internal implementation can differ between implementations.
+For example, musl libc%
+	\footnote{Project website \href{https://musl.libc.org}{musl.libc.org}}%
+, diet libc%
+	\footnote{Project website \href{https://www.fefe.de/dietlibc/}{www.fefe.de/dietlibc/}}
+or uClibc-ng%
+	\footnote{Project website \href{https://uclibc-ng.org}{uclibc-ng.org}}
+all provide implementations differing from the \gls{glibc} used by default on Linux.
+In general, their behavior should be the same across implementations.
+However, their structure and contents differ which may make it harder to successfully launch portable code reuse exploits which depend on a specific library.
+Such exploits may already fail when a different version of a specific C standard library is installed in the target system, but having different implementations of the C standard library adds another layer of indirection.
+
+Thirdly, the choice of compiler can make a difference in the emitted assembly code and thus also the assembled byte code and functionality.
+For example, \citeauthor{Guelton2020} found in early \citeyear{Guelton2020} that when compiling with the Clang compiler instead of \gls{gcc}, source fortification via the \texttt{\_FORTIFY\_SOURCE} macro may not be effective and the resulting code thus unprotected \cite{Guelton2020}.
+This has been fixed in the meantime \cite{Guelton2020a}, but it still shows that compilers may behave differently and thus some protections depending on the binary output may be more or less effective depending on the compiler.
+
+Finally, in this paper we focused solely on C code.
+Code compiled from other programming languages may result in different binary output even though the functionality is equivalent.
+In addition, programming languages have different specific properties.
+For example, object-oriented C++ code introduces \glspl{vmt} (also called \emph{vtables}) into the resulting compiler output.
+Those tables contain pointers to methods of an object which may be necessary to dispatch to the correct implementation of a method at runtime, for example when an object's type cannot be determined at compile time because of inheritance.
+When overwriting such pointers or the pointer to a \gls{vmt}, an attacker can control the method call behavior of an object.
+This approach already described in \citeyear{rix2000} \cite{rix2000} shows that a concept introduced by the usage of C++ instead of C may also introduce a new target for stack buffer overflows in addition to classic function pointers in local stack data or the \acrfull{rip}.
+
+In conclusion, the restriction to the system model described in \cref{sec:system-model} limits the possibilities for exploits and makes exploits easier because not as many environment properties have to be taken into consideration as with a more generic system model.
+Still, the attacks and defense mechanisms described in this paper are presented as generic as possible.
+
+\section{Heap overflows}
+\label{sec:heap-overflows}
+
+In this paper, focus is lying on overflows of stack buffers.
+However, the same kind of vulnerability applies to buffers on the heap or global variables.
+In the heap memory region and the \texttt{.bss} and \texttt{.data} sections (cf. \cref{fig:memory-layout}), buffers can also be overflown by for example unbounded \texttt{strcpy} operations or \texttt{memcpy} or \texttt{read} operations with too big size operands specifying the number of bytes to write to the destination buffer.
+Even though there are no directly obvious code pointers such as the \gls{rip} in those memory regions, other code pointers, for example function pointers located in C \texttt{struct}s as part of such a memory structure or also standalone function pointers, can be overflown to divert control flow.
+Also, overwriting the metadata of the memory chunks in the heap can lead to faulty executions, for example by marking a used chunk of memory as free and triggering an error when the program itself tries to free the chunk of memory itself.
+For exploitation of heap overflows, knowledge about the heap structure (organized in independent chunks instead of contiguous memory like on the stack) and other heap internals is necessary.
+As there are no stack canaries or similar protection measures on the heap, certain overflows become easier and may even be undetected by the process under attack.
+Heap overflow vulnerabilities and how to exploit them have already been presented 20 years ago \cite{Anonymous2001,Kaempf2001,SolarDesigner2000}.
+
+\section{Arbitrary memory access}
+\label{sec:arbitrary-memory-access}
+
+Stack buffer overflows can be used to write data to contiguous memory and in some cases to also read information from memory (cf. \cref{subsec:bf-information-leaking}.
+An effect of reading from memory or writing to memory via a stack buffer overflow is that only strictly contiguous memory regions are affected and that it is not possible to write to arbitrary memory addresses without first launching an attack to achieve arbitrary memory writes, for example by overflowing a pointer or launching a \gls{rop} attack that allows an attacker to do so.
+The same applies for reading information from arbitrary memory locations.
+However, there are also exploit techniques that allow direct access to arbitrary memory addresses specified by an attacker.
+Such attacks can for example easily bypass control flow information protection through \glspl{ssp}, as the need to overwrite a stack canary with the correct value does not arise.
+
+String format vulnerabilities are an example for such arbitrary memory access vulnerabilities.
+If a string \texttt{char *s} in a C program is printed to the \gls{stdout} with \texttt{printf(s)} instead of \texttt{printf(``\%s'', s)}, the values for any string format parameters such as \texttt{\%s, \%i, \%n} are taken from stack memory located after the string containing those format parameters.
+This allows for reading data from the stack (e.g. with the parameter \texttt{\%x} for hexadecimal data) and also writing data to the stack (e.g. with the parameter \texttt{\%n} for writing the number of already processed characters).
+Through such a vulnerability, an attacker can thus gain access to almost any arbitrary location in the process's address space \cite{scut2001}.
+
+\section{Hardware-assisted memory vulnerabilities}
+\label{sec:hardware-assisted-memory-vulnerabilities}
+
+The approaches described in this paper all only rely on software bugs such as unbounded string operations or other memory manipulation operations with size parameters not suitable for the corresponding destination buffers.
+However, over the last years a number of vulnerabilities depending on hardware bugs in a lot of processors of different architectures were discovered, such as Meltdown \cite{Lipp2018}, Spectre \cite{Kocher2019} or ZombieLoad \cite{Schwarz2019}, just to name a few.
+Such side-channel attacks, in the aforementioned cases generally caused by a \gls{cpu}'s behavior during out-of-order execution or speculative branching, cannot easily be mitigated by defense mechanisms described in this paper.
+Thus, they are even more powerful than just software errors like the ones allowing stack buffer overflows as presented in the previous chapters.
