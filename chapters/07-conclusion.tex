@@ -1,2 +1,15 @@
 \chapter{Conclusion}
 \label{chp:conclusion}
+
+In \cref{chp:defense-mechanism-improvements}, we provided a collection of proposals from the last two decades on how to improve protection against stack buffer overflow exploits.
+Seeing that their performance impact ranges from almost none to runtime multiplications of up to almost 25000 (cf. \cref{sec:performance-comparison}), not all presented measures should be implemented and used in all cases, as the performance overhead also depends on the use case in most of the cases.
+
+However, some of the approaches according to the corresponding developers incur only very little performance overhead and high compatibility with current implementations so that they should be taken into consideration in further software development for \glspl{os} and libraries.
+Especially, the Intel \gls{cet} implementation can thwart a lot of attacks after its release according to the technical documentation.
+Whether it can hold up to the expectations will show in the next few years after the release of the first processors implementing Intel \gls{cet} in 2020 (cf. \cref{subsec:cfi-intel-cet}).
+
+All in all, this paper presents not a complete but an extensive list of mechanisms to exploit stack buffer overflow vulnerabilities as well as defense mechanisms against such attacks.
+Therefore, this paper fulfills the goals defined in \cref{chp:introduction}.
+Firstly, it presents different attack mechanisms and thus shows why improvements to current defense measures are necessary.
+Secondly, it presents a selection of defense mechanisms which could thwart several attacks and therefore shows how aforementioned improvements to defensive security could be achieved.
+Additionally, the overall goal of filling the gap of providing an overview over the topic ``stack buffer overflow attack and defense mechanisms'' in scientific publications could be filled.
