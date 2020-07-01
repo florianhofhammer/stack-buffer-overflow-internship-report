@@ -1,57 +1,26 @@
 \chapter{Introduction}
 \label{chp:introduction}
 
-\todo[inline]{Basic introduction here}
-
-\section{Basic vocabulary}
-\label{sec:basic-vocabulary}
-As this report is about stack buffer overflows, it is important to know what this wording means.
-The \emph{stack} is a data structure used in modern \gls{os} memory management and is explained in \cref{sec:process-memory,sec:stack-setup-and-usage}.
-
-A \emph{buffer} generally is a ``limited, contiguously allocated set of memory'' \cite[12]{Anley2007}.
-In this report, we will often refer to C programming language's \texttt{char} arrays as buffers.
-Such arrays are fulfilling the above definition and are generally used to hold \gls{ascii} encoded text or arbitrary binary data, as a \texttt{char} in C refers to exactly one byte of data.
-
-\section{System model}
-\label{sec:system-model}
-
-In the cases where references to the Linux kernel, the \gls{glibc} or the \gls{gcc} are made, they refer to specific versions of those software products.
-In later versions, the behavior might change in order to mitigate some of the weaknesses described in this report.
-
-Those specific software versions comprise version 5.4.44 of the Linux kernel%
-	\footnote{Source code can be viewed online at \href{https://git.kernel.org/stable/h/v5.4.44}{git.kernel.org} \cite{LKD2020}}%
+When searching the \gls{cve} list \cite{MITRECorporation2020} for vulnerabilities, the search term ``stack buffer overflow'' yields 2608 results with 57 of them discovered in 2020.
+Entering only the search term ``buffer overflow'' returns a list of 10945 \gls{cve} entries%
+	\footnote{Even though the \gls{cve} search advisory states that such keywords may yield incorrect results, checking random samples of the results showed that the results were in fact correctly corresponding to the given search terms.}%
 .
-This release is a \gls{lts} release which means that it will be maintained until the end of 2025 \cite{LKO2020}.
-The version of \gls{glibc} is 2.31%
-	\footnote{Source code can be viewed online at \href{https://sourceware.org/git/?p=glibc.git;a=tree;h=6ee690ef6fa36bf79d2e05b5a30a4f7e10ba3937;hb=9ea3686266dca3f004ba874745a4087a89682617}{sourceware.org}}%
-.
-\gls{gcc} is used in in the latest 9.x line version 9.3.0.
+Those high numbers show that this kind of memory vulnerability is still very widespread, even though it has already been presented towards the end of the last century, for example in \citeauthor{AlephOne1996}'s famous paper \citetitle{AlephOne1996} \cite{AlephOne1996}.
+\todo{Maybe rework last phrase... technically not 100\% correct}
 
-At the time of writing this report, newer stable releases of the Linux kernel and \gls{gcc} are already available (5.7 for the Linux kernel \cite{LKO2020a}, 10.1 for \gls{gcc} \cite{FSF2020}).
-\todo{Look up whether the referenced parts changed at all or if everything's still valid for the new versions}
-However, this does not impose any problems on the real-world consequences of this report's contents.
-The newest editions of popular Linux distributions for \texttt{x86\_64/amd64} processor architectures like Red Hat Enterprise Linux (version 8.2), Ubuntu (version 20.04 \gls{lts}), Debian (version 10.4) are based on the Linux 5.4 \gls{lts} kernel line or even older versions%
-	\footnote{See also discussion on \href{https://www.reddit.com/r/webhosting/comments/beg0z0/should_i_use_an_lts_version_of_ubuntu_for_my_web/}{reddit.com} on whether to use \gls{lts} versions for production server deployment}
-\cite{RedHat2020,Canonical2020,SPI2020,SPI2020a}.
-Also, the highest kernel version used for development of the Android mobile \gls{os}, which has a market share of about 70\% \cite{Statcounter2020}, is Linux 5.4 \gls{lts} \cite{GoogleLLC2020}.
-Thus, it is safe to assume that the majority of devices running Linux kernels or kernels closely derived from the Linux kernel run version 5.4.44 or lower.
+To the author's best knowledge, no scientific papers providing an overview over stack buffer overflow exploit mechanisms and measures to mitigate such exploits exist.
+Thus, the goal of this report is to gather information from scientific work and consolidate and compare the findings of different researchers in a single paper to provide an overview and a collection of ideas for exploit development and mitigation.
 
-A similar observation can be made for \gls{gcc} version 9.3.0.
-The aforementioned Linux distributions all by default ship the \gls{gcc} package in version 9.3.0 or below \cite{RedHat2020a,Canonical2020a,SPI2020b}.
-It can therefore be safely assumed that \gls{gcc} version 9.3.0 is still very widespread and in frequent use.
+This paper is partitioned into several chapters.
+Firstly, we want to provide a short introduction into the technical background of memory layout, stack usage and stack buffer overflows in \cref{chp:background}.
+Secondly, we describe current protection measures against stack buffer overflows implemented by the compiler, the \gls{os} or other parts of the runtime environment in \cref{chp:current-defense-mechanisms}.
+In \cref{chp:attack-vectors}, we present a collection of exploit mechanisms and approaches which are based on stack buffer overflow vulnerabilities.
+It is important to mention that despite starting with approaches that are easily mitigated by measures from \cref{chp:current-defense-mechanisms}, also more sophisticated exploit mechanisms are presented which aim to bypass the aforementioned protection measures.
+\Cref{chp:defense-mechanism-improvements} in consequence then contains several improvement proposals to the defense mechanisms from \cref{chp:current-defense-mechanisms} which could potentially thwart the even more sophisticated approaches from \cref{chp:attack-vectors}.
+Concluding with \cref{chp:related-work,chp:conclusion}, we shed light on the limits and restrictions of this paper, present ideas how to generalize the findings and overcome the limits in possible future work and draw a final conclusion.
 
-If not otherwise stated, the following chapters and sections are referring to a 64 bit (\texttt{x86\_64} or \texttt{amd64} architecture) \acs{gnu}/Linux system with the aforementioned software versions.
-Thus, if referring to processor registers, by default the corresponding 64 bit register names (starting with the letter \texttt{r} instead of \texttt{e} on 32 bit \texttt{x86} architecture, for example \texttt{rsp} instead of \texttt{esp}) are used.
-The 32 bit register names are only used if explicitly referring to 32 bit code.
-In addition, a memory layout equivalent to the memory layout for C programs as described in \cref{sec:process-memory} should be assumed.
-
-The terms \texttt{x86} and \texttt{i386} for 32 bit processor architectures and \texttt{x86\_64} and \texttt{amd64} for 64 bit processor architectures are used synonymously throughout this report.
-
-This report only targets userspace stack buffer overflows.
-The kernel is assumed to be safe in a sense that it has no stack buffer overflow vulnerabilities and is thus not targeted in this report.
-\todo{Maybe move to other section? Not really defining the system...}
-
-\section{Report structure}
-\label{sec:report-structure}
-
-\todo[inline]{Describe structure of the report and what to find in which chapter}
+The choice of exploit and defense mechanisms in \cref{chp:attack-vectors,chp:defense-mechanism-improvements} was made based on the experiences made during the practical part of the internship this report corresponds to.
+During the first half of the internship, focus was lying on implementing different exploit mechanisms as described in \cref{chp:attack-vectors}.
+All the test exploits were implemented on a \texttt{x86\_64} machine running a current Linux kernel (cf. \cref{sec:system-model}).
+The successful implementation of different exploits leads to the conclusion that additional security measures are needed, even in modern systems.
+This report aims to show why this is the case and how this could be achieved.
