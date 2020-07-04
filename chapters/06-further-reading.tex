@@ -66,8 +66,8 @@ If a string \texttt{char *s} in a C program is printed to the \gls{stdout} with 
 This allows for reading data from the stack (e.g. with the parameter \texttt{\%x} for hexadecimal data) and also writing data to the stack (e.g. with the parameter \texttt{\%n} for writing the number of already processed characters).
 Through such a vulnerability, an attacker can thus gain access to almost any arbitrary location in the process's address space \cite{scut2001}.
 
-\section{Hardware-assisted memory vulnerabilities}
-\label{sec:hardware-assisted-memory-vulnerabilities}
+\section{Hardware-based memory vulnerabilities}
+\label{sec:hardware-based-memory-vulnerabilities}
 
 The approaches described in this paper all only rely on software bugs such as unbounded string operations or other memory manipulation operations with size parameters not suitable for the corresponding destination buffers.
 However, over the last years a number of vulnerabilities depending on hardware bugs in a lot of processors of different architectures were discovered, such as Meltdown \cite{Lipp2018}, Spectre \cite{Kocher2019} or ZombieLoad \cite{Schwarz2019}, just to name a few.

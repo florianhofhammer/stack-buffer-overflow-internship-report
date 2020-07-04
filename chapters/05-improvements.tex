@@ -4,7 +4,7 @@
 In this chapter, we refer to weaknesses in current security mechanisms that were described in \cref{chp:current-defense-mechanisms,chp:attack-vectors} and present several suggestions on how to improve security in regards to stack buffer overflow exploit prevention.
 
 In \cref{sec:aslr-improvements,sec:stack-canary-improvements} we refer to mechanisms mainly based on randomization and the problems coming with such randomization.
-In \cref{sec:function-pointer-protection-improvements,sec:control-flow-integrity} we then present more deterministic approaches to protect processes against stack buffer overflow exploits.
+In \cref{sec:control-flow-integrity} we then present a more deterministic approach to protect processes against arbitrary code execution through stack buffer overflow exploits.
 Finally, \cref{sec:performance-comparison} concludes with comparing the performance impact of the previously presented security improvements.
 
 \section{\glsentrylong{aslr} (\glsentryshort{aslr})}
@@ -189,7 +189,7 @@ Therefore, it is important to deploy such protection only in cases like describe
 Of course, adding additional instructions and code to be executed when forking a process incurs a performance overhead in comparison to the original implementation.
 However, as their code is very lightweight, \citeauthor{MarcoGisbert2013} could not measure any performance overhead apart from statistical variability caused by external factors such as processor scheduling and \gls{os} when benchmarking the Apache web server with some pre-forked child processes and dynamically forked additional child processes \cite[249\psq]{MarcoGisbert2013}.
 
-\subsection{\Glsentrylong{dcr} (\glsentryshort{dcr})}
+\subsection{\glsentrylong{dcr} (\glsentryshort{dcr})}
 \label{subsec:dynamic-canary-randomization}
 
 \Citeauthor{Hawkins2016} propose a different approach for re-randomizing stack canaries.

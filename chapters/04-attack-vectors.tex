@@ -8,13 +8,6 @@ Additionally, it is assumed that an adversary has access to the executable binar
 In \cref{sec:code-injection,sec:code-reuse} we present the two basic types of stack buffer overflow attacks, \crtlnameref{sec:code-injection} and \crtlnameref{sec:code-reuse}.
 As their basic approaches are easily mitigated by different defense mechanisms presented in \cref{chp:current-defense-mechanisms}, the successive sections then present additional attack techniques and several possibilities on how to bypass certain security measures.
 
-\todo{
- Differentiate between RIP and SFP overwriting? 
- If yes, in sections if applicable or in own section?
- What about overwriting data in general?
- Maybe own section at the end? Or somewhere in the middle?
-}
-
 \section{Code injection}
 \label{sec:code-injection}
 
@@ -26,7 +19,7 @@ As their basic approaches are easily mitigated by different defense mechanisms p
 
 Code injection is the simplest attack vector for stack buffer overflows.
 As described in \cref{sec:stack-buffer-overflows}, an attacker might try to overwrite the \gls{rip}.
-If this is possible, an attacker can divert control flow to any location he wants.
+If this is possible, an attacker can divert control flow to any location they want.
 
 At such locations, the attacker can place so-called \emph{shellcode} before overflowing the vulnerable buffer.
 Shellcode is the binary representation of assembly instructions compiled to the corresponding \glspl{opcode}.
@@ -163,8 +156,7 @@ Still, enabling \gls{aslr} cannot guarantee to prevent code injection attacks.
 If \gls{aslr} is enabled but the executable is not compiled as \gls{pie}, sections in the \gls{elf} binary such as \texttt{.bss} or \texttt{.data} are still located at fixed addresses and can thus be used as a target as described in the section about \crtlnameref{subsubsec:ci-via-globals}.
 
 Even if \gls{aslr} is enabled on the system under attack and the executable was compiled as \gls{pie} beforehand, \gls{aslr} just lowers the chance of an attacker to hit the right address but does not prevent it for sure.
-The stochastic approach of \gls{aslr} and other weaknesses which are further described in \cref{chp:defense-mechanism-improvements} and where bypass approaches are presented in following sections still allow for successful code injection attacks.
-\todo{Make reference more concrete than just referring to a whole chapter}
+The stochastic approach of \gls{aslr} and other weaknesses and bypass approaches presented in following sections such as \cref{sec:brute-force,sec:aslr-improvements} still allow for successful code injection attacks under some specific circumstances.
 
 Nevertheless, the combination of \gls{dep} and \gls{aslr} in general provides a strong defense against code injection stack buffer overflow attacks by combining memory addresses that are hard to get right with non-executable memory regions.
 
@@ -270,7 +262,7 @@ A simple example for such a control flow is shown in \cref{fig:jop-dispatcher}.
 		\caption{Examplary \acs{jop} control flow with a trampoline gadget (own graphical representation based on figure 1 from \cite{Checkoway2010})}
 		\label{fig:jop-trampoline}
 	\end{subfigure}
-	\caption{Control flow of dispatcher and trampoline based \acs{jop} exploits. Note the difference between indirect and direct jump in the dispatcher and trampoline gadget.}
+	\caption{Control flow of dispatcher and trampoline based \acs{jop} exploits. Note the difference between indirect and direct jump in the dispatcher and trampoline gadget. Numbers above arrows denote execution order.}
 	\label{fig:jump-oriented-programming}
 \end{figure}
 
@@ -299,7 +291,6 @@ Similar to the \hyperref[subsubsec:cr-jop-dispatcher]{dispatcher gadget approach
 
 A \texttt{call} instruction on \texttt{x86\_64} behaves basically like a \texttt{push rip; jmp} instruction.
 It pushes the current \texttt{rip} register contents which contains the address of the next instruction onto the stack and then branches to the provided target \cite[3-122\psqq]{IntelCorporation2020}.
-\todo{Page numbers as in the document, but they include hyphens because the page numbers are reset for every chapter... Not ideal, looks like a page range here}
 Because of this behavior, \citeauthor{Bletsch2011} already state that \texttt{call} instructions can be used for \gls{jop} instead of \texttt{jmp} instructions as long as the exploit doesn't rely on the stack or the side-effect of pushing the return address onto the stack is compensated for by the gadgets \cite{Bletsch2011}.
 
 \citeauthor{Sadeghi2018} further developed this idea into so-called \gls{cop} where only \texttt{call} instructions are used for chaining the gadgets.
@@ -380,7 +371,6 @@ As they do not insert code into memory pages marked as non-executable but only d
 
 \section{\glsentryshort{got} hijacking}
 \label{sec:got-hijacking}
-\todo{Maybe rework section to also include overwriting of \texttt{.fini\_\linebreak[0]array} data $\Rightarrow$ targeted overwriting instead of just \acs{got} hijacking}
 
 As mentioned in \cref{sec:relro} concerning the \gls{relro} security measure, \gls{got} entries without protection through \gls{relro} and located right after the user-controlled data sections in memory could be overwritten by an attacker exploiting a buffer overflow vulnerability with a buffer located in said data sections (\texttt{.bss} or \texttt{.data}).
 As this paper is referring specifically to stack based buffer overflows, such attacks are out of scope and will not be analyzed further.
@@ -615,7 +605,7 @@ As the child process inherits a copy of the parent's memory space, the stack con
 This fact can be exploited on daemons where child processes handle requests or in software where any interaction only occurs with a child process that is restarted by a backend parent process when a crash occurs.
 Because of that behavior, information found during interaction with the software can be reused on subsequent interactions, as the memory layout and contents are still the same.
 
-If an attacker can determine that such a child process crashed or doesn't behave as expected, for example because the process's response differs from the expected response or is completely omitted, the attacker can determine whether the process behaves normally or whether some abnormal behavior occurred.
+If an attacker can determine that such a child process crashed or doesn't behave as expected, for example because the process's response differs from the expected response or is completely omitted, they can determine whether the process behaves normally or whether some abnormal behavior occurred.
 In case of a stack buffer overflow, this can be exploited by overwriting only a single byte of the stack canary per call to the program.
 If the adversary detects that the value for this byte was incorrect because the child process crashed, they can try again with the next value.
 If on the other hand the process behaves as expected, the attacker knows that the guessed byte was correct.
@@ -650,7 +640,7 @@ The only difference is that \gls{aslr} might be bypassed by including a big \acs
 Theoretically, brute-forcing a stack canary is also possible but not really feasible, as there are $ 2^{56} $ possibilities on \texttt{x86\_64} when the last byte is already fixed as \texttt{0x00}.
 Because of little endian representation, this \texttt{0x00} byte is the first byte in memory to be overwritten. Attacking a stack canary by the same full-word brute-force approach would thus also imply the need for the stack buffer overflow vulnerability lying in a function working on binary data, as string-based functions would already stop at the \texttt{0x00} byte.
 
-The need for the vulnerability being exploitable by a function working on binary data such as \texttt{read} or \texttt{memcpy} is also present when looking at attacks based on \crtlnameref{subsec:bf-information-leaking}.
+The need for the vulnerability being exploitable by a function working on binary data such as \texttt{read} or \texttt{memcpy} also arises when looking at attacks based on \crtlnameref{subsec:bf-information-leaking}.
 With string-based functions, such an attack cannot work, as string-based functions append a string-terminating \texttt{0x00} byte to the end of the data inserted by the attacker.
 This would lead to the impossibility of successfully leaking the stack canary, as the \texttt{0x00} byte would already overwrite the next byte after the one that is currently guessed.
 As a consequence, with this kind of attack there are also no problems with addresses of functions or gadgets or any other payload containing \texttt{0x00} bytes, as such bytes can be written with functions operating on arbitrary binary data.
@@ -669,13 +659,13 @@ In this section, we present an overview over the power and limitations of the di
 		\bgroup
 		\def\arraystretch{1.1} % changes vertical spacing so that the table looks better
 		\newlength{\colwidth} % Column width for table and nested tables for clean alignment
-		\setlength{\colwidth}{1.8cm}
+		\setlength{\colwidth}{1.75cm}
 		\begin{tabular}{|l|*{6}{P{\colwidth}|}}
 			\hline
 			\textbf{Attack approach}		& \multicolumn{6}{@{}l@{}}{
 								\begin{tabular}{*{6}{p{\colwidth}|}}
 									\multicolumn{6}{l|}{\textbf{Security measure}}	\\ \hline
-									\texttt{\_FORTIFY\linebreak[0]\_SOURCE}	& \raggedright \acs{dep} / \acs{nx} bit	& \raggedright \acs{aslr} (without \acs{pie} / \acs{pic})	& \acs{aslr} (with \acs{pie} / \acs{pic})	& Stack canaries	& (full) \acs{relro}	\\
+									\texttt{\_FORTIFY\linebreak[0]\_SOURCE}	& \raggedright \acs{dep} / \acs{nx} bit	& \raggedright \acs{aslr} (without \acs{pie} / \acs{pic})	& \raggedright \acs{aslr} (with \acs{pie} / \acs{pic})	& Stack canaries	& (full) \acs{relro}	\\
 								\end{tabular}					
 							  } \\ \hline
 			Code injection:					&		 &		  &		   &		&		 &		  \\
@@ -704,7 +694,6 @@ In this section, we present an overview over the power and limitations of the di
 	}
 	\label{tab:attack-comparison}
 \end{table}
-\todo{Fix awful indentation issue $\Rightarrow$ hspace in table shouldn't be necessary, maybe put table onto landscape page}
 
 The main overview is provided in \cref{tab:attack-comparison}.
 This table shows for the previously presented attack approaches which security measures they can bypass (\cmark) and which security measures can (in an overwhelming majority of cases) prevent those attacks (\xmark).
@@ -712,7 +701,7 @@ This table shows for the previously presented attack approaches which security m
 Still, it is important to note that none of the presented approaches can bypass all modern security measures in any vulnerable executable.
 In fact, most of the attacks described rely on specific prerequisites.
 For example, \gls{got} hijacking as described in \cref{sec:got-hijacking} cannot be prevented by deploying stack canaries, as the canaries only protect control flow information but not function-local data such as pointers to strings.
-However, for the exploit to work as described, it is necessary to have a stack buffer overflow which allows an attacker to overwrite a string pointer and to have a write operation writing user-controlled data and working on the overwritten pointer later in the program.
+For the exploit to work as described, it is necessary to have a stack buffer overflow which allows an attacker to overwrite a string pointer and to have a second write operation writing user-controlled data and working on the overwritten pointer later in the program.
 Thus, even when a specific kind of attack may be able to bypass certain security measures in theory, the success of such an attack still depends on process-intrinsic behavior.
 
 Additionally, different approaches can be combined to facilitate and optimize an exploit.

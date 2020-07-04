@@ -3,6 +3,78 @@
 \chapter{Supporting code}
 \label{chp:app:supporting-code}
 
+\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:local-global-buffer} with \texttt{gcc -o local-global-buffer -O1 local-global-\linebreak[0]buffer.c}, retrieved with \texttt{objdump -D -{}-no-show-raw-insn local-\linebreak[0]global-buffer}}, label={lst:local-global-buffer-disassembly-non-fortified}]
+0000000000001169 <main>:
+1169:       push   %rbx
+116a:       sub    $0x30,%rsp
+116e:       mov    %fs:0x28,%rax
+1177:       mov    %rax,0x28(%rsp)
+117c:       xor    %eax,%eax
+117e:       lea    0xe83(%rip),%rdi
+1185:       callq  1030 <puts@plt>
+118a:       mov    $0x100,%edx
+118f:       lea    0x2eea(%rip),%rsi
+1196:       mov    $0x0,%edi
+119b:       callq  1060 <read@plt>
+11a0:       lea    0xe89(%rip),%rdi
+11a7:       callq  1030 <puts@plt>
+11ac:       mov    %rsp,%rbx
+11af:       mov    $0x100,%edx
+11b4:       mov    %rbx,%rsi
+11b7:       mov    $0x0,%edi
+11bc:       callq  1060 <read@plt>
+11c1:       mov    %rbx,%rdx
+11c4:       lea    0x2eb5(%rip),%rsi
+11cb:       lea    0xe86(%rip),%rdi
+11d2:       mov    $0x0,%eax
+11d7:       callq  1050 <printf@plt>
+11dc:       mov    0x28(%rsp),%rax
+11e1:       sub    %fs:0x28,%rax
+11ea:       jne    11f7 <main+0x8e>
+11ec:       mov    $0x0,%eax
+11f1:       add    $0x30,%rsp
+11f5:       pop    %rbx
+11f6:       retq
+11f7:       callq  1040 <__stack_chk_fail@plt>
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash,float=ht,caption={Disassembly excerpt of the 64 bit binary compiled from the code in \cref{lst:local-global-buffer} with \texttt{gcc -o local-global-buffer -D\_FORTIFY\_SOURCE=2 -O1 local-global-buffer.c}, retrieved with \texttt{objdump -D -{}-no-show-\linebreak[0]raw-insn local-global-buffer} (note the call to \texttt{\_\_read\_chk} instead of \texttt{read} in line 20)}, label={lst:local-global-buffer-disassembly-fortified}]
+0000000000001179 <main>:
+1179:       push   %rbx
+117a:       sub    $0x30,%rsp
+117e:       mov    %fs:0x28,%rax
+1187:       mov    %rax,0x28(%rsp)
+118c:       xor    %eax,%eax
+118e:       lea    0xe73(%rip),%rdi
+1195:       callq  1040 <puts@plt>
+119a:       mov    $0x100,%edx
+119f:       lea    0x2eda(%rip),%rsi
+11a6:       mov    $0x0,%edi
+11ab:       callq  1060 <read@plt>
+11b0:       lea    0xe79(%rip),%rdi
+11b7:       callq  1040 <puts@plt>
+11bc:       mov    %rsp,%rbx
+11bf:       mov    $0x20,%ecx
+11c4:       mov    $0x100,%edx
+11c9:       mov    %rbx,%rsi
+11cc:       mov    $0x0,%edi
+11d1:       callq  1030 <__read_chk@plt>
+11d6:       mov    %rbx,%rcx
+11d9:       lea    0x2ea0(%rip),%rdx
+11e0:       lea    0xe71(%rip),%rsi
+11e7:       mov    $0x1,%edi
+11ec:       mov    $0x0,%eax
+11f1:       callq  1070 <__printf_chk@plt>
+11f6:       mov    0x28(%rsp),%rax
+11fb:       sub    %fs:0x28,%rax
+1204:       jne    1211 <main+0x98>
+1206:       mov    $0x0,%eax
+120b:       add    $0x30,%rsp
+120f:       pop    %rbx
+1210:       retq
+1211:       callq  1050 <__stack_chk_fail@plt>
+\end{lstlisting}
+
 \lstinputlisting[language=C,float=ht,caption={C program outputting an environment variable's memory location in a target program {\cite[147\psq]{Erickson2008}}},label={lst:getenvaddress}]{code/getenvaddress.c}
 
 %%% Local Variables:

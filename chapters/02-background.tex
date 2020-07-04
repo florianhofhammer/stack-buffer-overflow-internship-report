@@ -22,8 +22,8 @@ Such arrays are fulfilling the above definition and are generally used to hold \
 In the cases where references to the Linux kernel, the \gls{glibc} or the \gls{gcc} are made, they refer to specific versions of those software products.
 In later versions, the behavior might change in order to mitigate some of the weaknesses described in this report.
 
-Those specific software versions comprise version 5.4.44 of the Linux kernel%
-\footnote{Source code can be viewed online at \href{https://git.kernel.org/stable/h/v5.4.44}{git.kernel.org} \cite{LKD2020}}%
+Those specific software versions comprise version 5.4.50 of the Linux kernel%
+\footnote{Source code can be viewed online at \href{https://git.kernel.org/stable/h/v5.4.50}{git.kernel.org} \cite{LKD2020}}%
 .
 This release is a \gls{lts} release which means that it will be maintained until the end of 2025 \cite{LKO2020}.
 The version of \gls{glibc} is 2.31%
@@ -31,14 +31,13 @@ The version of \gls{glibc} is 2.31%
 .
 \gls{gcc} is used in in the latest 9.x line version 9.3.0.
 
-At the time of writing this report, newer stable releases of the Linux kernel and \gls{gcc} are already available (5.7 for the Linux kernel \cite{LKO2020a}, 10.1 for \gls{gcc} \cite{FSF2020}).
-\todo{Look up whether the referenced parts changed at all or if everything's still valid for the new versions}
+At the time of writing this report, newer stable releases of the Linux kernel and \gls{gcc} are already available (5.7.x line for the Linux kernel \cite{LKO2020a}, 10.x line for \gls{gcc} \cite{FSF2020}).
 However, this does not impose any problems on the real-world consequences of this report's contents.
 The newest editions of popular Linux distributions for \texttt{x86\_64/amd64} processor architectures like Red Hat Enterprise Linux (version 8.2), Ubuntu (version 20.04 \gls{lts}), Debian (version 10.4) are based on the Linux 5.4 \gls{lts} kernel line or even older versions%
 \footnote{See also discussion on \href{https://www.reddit.com/r/webhosting/comments/beg0z0/should_i_use_an_lts_version_of_ubuntu_for_my_web/}{reddit.com} on whether to use \gls{lts} versions for production server deployment}
 \cite{RedHat2020,Canonical2020,SPI2020,SPI2020a}.
 Also, the highest kernel version used for development of the Android mobile \gls{os}, which has a market share of about 70\% \cite{Statcounter2020}, is Linux 5.4 \gls{lts} \cite{GoogleLLC2020}.
-Thus, it is safe to assume that the majority of devices running Linux kernels or kernels closely derived from the Linux kernel run version 5.4.44 or lower.
+Thus, it is safe to assume that the majority of devices running Linux kernels or kernels closely derived from the Linux kernel run version 5.4.50 or lower.
 
 A similar observation can be made for \gls{gcc} version 9.3.0.
 The aforementioned Linux distributions all by default ship the \gls{gcc} package in version 9.3.0 or below \cite{RedHat2020a,Canonical2020a,SPI2020b}.
@@ -177,7 +176,6 @@ Including the terminating \texttt{0x00} byte, this string copy operation thus ov
 
 If an attacker can control the data which is copied onto the stack, they%
 	\footnote{In this paper, the gender-neutral singular pronoun ``they'' and pronouns derived from it are used instead of singular ``he'', ``she'' or pronouns derived from those if no specific gender is provided for a person.}
-	\todo{Check if this is the first occurrence, otherwise move footnote to the first one}
 can carefully craft an input string so that they can overwrite the \gls{sfp} or \gls{rip} with attacker-controlled data and thus control where the program tries to look for function-local data (overwritten \gls{sfp}) or to continue execution (overwritten \gls{rip}) after it returns from the current function.
 A stack buffer overflow always occurs if a buffer just like \texttt{c} in \cref{lst:vulnerable-function} is filled with more data than it can hold.
 This does not necessarily mean that the \gls{sfp} or \gls{rip} is overwritten by a stack buffer overflow, but in most cases this is the goal of an attacker in order to divert control flow in the program's execution or manipulate a function's data.

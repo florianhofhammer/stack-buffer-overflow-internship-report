@@ -32,8 +32,7 @@ For dynamic sized operands where the compiler cannot determine whether the desti
 For example, \texttt{strcpy} is replaced with \texttt{\_\_strcpy\_chk}.
 If the check fails, the program execution is aborted with an error message \cite{Kerrisk2020,Sharma2014}.
 
-The \texttt{\_FORTITY\_SOURCE} macro can either be manually set to a value higher than 0 or is automatically activated when compiler optimizations are enabled, for example by passing the \texttt{-O3} flag to \gls{gcc} \cite{Kerrisk2020,Sharma2014,Sidhpurwala2018}.
-\todo{Include example? Not sure}
+The \texttt{\_FORTITY\_SOURCE} macro value can be set to a value higher than 0 and is then activated when compiler optimizations are enabled, for example by passing the \texttt{-O3} flag to \gls{gcc} \cite{Kerrisk2020,Sharma2014,Sidhpurwala2018} (cf. \cref{lst:local-global-buffer-disassembly-non-fortified,lst:local-global-buffer-disassembly-fortified} based on \cref{lst:local-global-buffer} without and with source fortification enabled).
 
 \citeauthor{Jelinek2004} states in the announcement of the original implementation of this feature that the runtime overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
 
@@ -124,7 +123,7 @@ The Linux kernel makes use of the \gls{nx} bit by default since \citeyear{Cook20
 
 These flags allows marking specific pages as non-executable, such as the memory pages containing a program's stack.
 Furthermore, a \gls{wxorx} approach on modern systems marks memory pages as either writable or executable but not both at the same time.
-This approach can be seen as an extension to just marking the stack as non-executable and prevents an attacker from executing code he has written into the program's memory space before.
+This approach can be seen as an extension to just marking the stack as non-executable and prevents an attacker from executing code they have written into the program's memory space before.
 
 \section{Function pointer protection}
 \label{sec:function-pointer-protection-current}
