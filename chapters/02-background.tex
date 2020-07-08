@@ -44,7 +44,7 @@ The aforementioned Linux distributions all by default ship the \gls{gcc} package
 It can therefore be safely assumed that \gls{gcc} version 9.3.0 is still very widespread and in frequent use.
 
 If not otherwise stated, the following chapters and sections are referring to a 64 bit (\texttt{x86\_64} or \texttt{amd64} architecture) \acs{gnu}/Linux system with the aforementioned software versions.
-Thus, if referring to processor registers, by default the corresponding 64 bit register names (starting with the letter \texttt{r} instead of \texttt{e} on 32 bit \texttt{x86} architecture, for example \texttt{rsp} instead of \texttt{esp}) are used.
+Consequently, if referring to processor registers, by default the corresponding 64 bit register names (starting with the letter \texttt{r} instead of \texttt{e} on 32 bit \texttt{x86} architecture, for example \texttt{rsp} instead of \texttt{esp}) are used.
 The 32 bit register names are only used if explicitly referring to 32 bit code.
 In addition, a memory layout equivalent to the memory layout for C programs as described in \cref{sec:process-memory} should be assumed.
 
@@ -79,7 +79,7 @@ This includes for example arrays or buffers like the \texttt{input} buffer in \c
 As the user input cannot be determined before running the program, the buffer has to be allocated dynamically which happens with a call to \texttt{malloc} in line 11 of the listing.
 The contents of the buffer are then stored on the heap.
 
-The stack on the other hand contains data with fixed size.
+The stack on the other hand contains data with fixed sizes.
 In the example of \cref{lst:memory-layout}, sizes of variables like \texttt{int max\_len} or \texttt{char *input} are known at compile time.
 Thus, they can be stored on the stack by increasing the stack size by a fixed size when program flow enters the corresponding function.
 It has to be noted here that even though the contents of the \texttt{input} buffer are stored in the heap, the pointer to those contents is stored on the stack.
@@ -172,7 +172,6 @@ Including the terminating \texttt{0x00} byte, this string copy operation thus ov
 	\caption{Stack layout of a function with two local variables: a 12 byte buffer (\texttt{char c[12]}) and a pointer (\texttt{char *bar})}
 	\label{fig:stack-layout}
 \end{figure}
-\todo{If enough time, edit all graphics to represent 64 bit stacks}
 
 If an attacker can control the data which is copied onto the stack, they%
 	\footnote{In this paper, the gender-neutral singular pronoun ``they'' and pronouns derived from it are used instead of singular ``he'', ``she'' or pronouns derived from those if no specific gender is provided for a person.}

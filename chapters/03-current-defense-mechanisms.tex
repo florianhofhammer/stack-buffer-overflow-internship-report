@@ -1,13 +1,9 @@
 \chapter{Current defense mechanisms}
 \label{chp:current-defense-mechanisms}
 
-This chapter provides information about defense mechanisms trying to mitigate stack buffer overflow attacks as they are currently employed by the Linux kernel or the compiler.
-This refers to software versions as described in \cref{sec:system-model}.
-
-\Cref{chp:attack-vectors} then describes the actual attack possibilities that arise from a stack buffer overflow vulnerability and how such attack vectors can be rendered unusable or at least inefficient and hard to exploit.
-
-Additionally, some of the attacks described in \cref{chp:attack-vectors} can also be used to bypass some of the mitigation measures described in \hyperref[chp:current-defense-mechanisms]{this \namecref{chp:current-defense-mechanisms}}.
-Therefore, \cref{chp:defense-mechanism-improvements} provides different approaches on how to improve the defense mechanisms in order to prevent even more attacks.
+This chapter provides information about defense mechanisms trying to mitigate stack buffer overflow attacks as they are deployed in current systems.
+Those security measures are partially implemented by the compiler as well as the \gls{os} kernel or libraries such as \gls{glibc}.
+When referencing such software, this chapter refers to software versions as described in \cref{sec:system-model}.
 
 \section{Compiler-based measures}
 \label{sec:compiler-based-measures}
@@ -34,7 +30,7 @@ If the check fails, the program execution is aborted with an error message \cite
 
 The \texttt{\_FORTITY\_SOURCE} macro value can be set to a value higher than 0 and is then activated when compiler optimizations are enabled, for example by passing the \texttt{-O3} flag to \gls{gcc} \cite{Kerrisk2020,Sharma2014,Sidhpurwala2018} (cf. \cref{lst:local-global-buffer-disassembly-non-fortified,lst:local-global-buffer-disassembly-fortified} based on \cref{lst:local-global-buffer} without and with source fortification enabled).
 
-\citeauthor{Jelinek2004} states in the announcement of the original implementation of this feature that the runtime overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
+In the announcement of the original implementation of this feature it was stated by \citeauthor{Jelinek2004}, the author of the software patch, that the runtime overhead of the checks is very small and that the compiler automatically omits the checks if it can prove at compile time that no overflow can occur \cite{Jelinek2004}.
 
 \subsection{Optimizing compilation}
 \label{subsec:optimizing-compilation}
@@ -102,7 +98,7 @@ Thus, in the given example, enabling compiler optimizations can prevent an attac
 
 In general, this is not always the case.
 Not all functions are inlined and not in any case an attacker just wants to overwrite the \gls{rip} or \texttt{main} never returns.
-Thus, compiler optimizations should not be seen as a measure to prevent attackers from exploiting stack buffer overflows.
+Therefore, compiler optimizations should not be seen as a measure to prevent attackers from exploiting stack buffer overflows.
 They can make such vulnerabilities harder to exploit in certain cases but not mitigate them in total.
 
 There are a lot of further compiler optimizations which influence the stack layout or the code generation.
@@ -112,7 +108,7 @@ However, listing and explaining all of them would exceed the scope of this paper
 \label{sec:executable-space-protection}
 
 As mentioned in \cref{sec:stack-buffer-overflows}, the mixture of control flow information and data on the stack is what enables attackers to exploit stack buffer overflow vulnerabilities in order to divert control flow.
-Because the stack contents are often user-controlled, for example when saving command line input on the stack, a measure of protection against executing previously written code is a possibility to harden a system against stack buffer overflows.
+Since the stack contents are often user-controlled, for example when saving command line input on the stack, a measure of protection against executing previously written code is a possibility to harden a system against stack buffer overflows.
 Such protections are often referred to as \emph{executable space protection} or \emph{\gls{dep}}, where the latter term is often used for Microsoft Windows specific implementations \cite{Satran2018}.
 
 On 64 bit machines, memory pages are marked with specific flags signaling the permissions for the given memory page.
@@ -153,7 +149,7 @@ Instead of being loaded at a fixed address and containing fixed addresses for fu
 
 On 64-bit Linux, \gls{elf} executables compiled as non-\acs{pie} are by default loaded at the base address \texttt{0x0000000000400000}.
 Compiled as \gls{pie}, they are loaded at the base address \texttt{0x0000555555554000} if \gls{aslr} is disabled.
-Thus, for an attacker to be able to determine addresses which might be usable as target addresses when overwriting control flow information, only the base address changes but the general approach stays the same.
+Therefore, for an attacker to be able to determine addresses which might be usable as target addresses when overwriting control flow information, only the base address changes but the general approach stays the same.
 The real benefits of \gls{pic} come into play when combined with \gls{aslr}.
 
 \subsection{\glsentrylong{aslr} (\glsentryshort{aslr})}
@@ -197,7 +193,7 @@ For example, overwriting the \gls{got} entry of \texttt{puts} with the address o
 
 \gls{relro} tries to prevent such attacks.
 The idea behind \gls{relro} is to reorder \gls{elf} sections so that the sections needed for dynamic linking and especially the \gls{got} section are located at lower memory addresses than the \texttt{.data} and \texttt{.bss} sections.
-Those sections might contain buffers vulnerable to buffer overflows and thus allow overwriting \gls{got} entries if the \gls{got} section is located directly after said sections at a higher memory address%
+Those sections might contain buffers vulnerable to buffer overflows and hence allow overwriting \gls{got} entries if the \gls{got} section is located directly after said sections at a higher memory address%
 	\footnote{
 		Such a section reordering is described in \cite[183]{Klein2011}.
 		However, compiling with \gls{gcc} nowadays already emits the sections so that internal data sections like the \gls{got} are located in memory in front of data sections like \texttt{.data} even if \gls{relro} is explicitly disabled (tested with \texttt{gcc -o test test.c -z norelro} and \texttt{readelf -S test} for an arbitrary, error-free C source file that references dynamically loaded functions such as \texttt{printf}).

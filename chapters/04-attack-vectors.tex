@@ -2,11 +2,11 @@
 \label{chp:attack-vectors}
 
 In this chapter, we describe several methods to gain control over a program vulnerable to stack buffer overflow attacks.
-In each of the sections, it is assumed that none of the measures from \cref{chp:current-defense-mechanisms} are enabled or active unless otherwise stated.
+In each of the sections, by default none of the measures from \cref{chp:current-defense-mechanisms} are considered enabled or active unless otherwise stated.
 Additionally, it is assumed that an adversary has access to the executable binary which is attacked and can thus statically analyze it.
 
 In \cref{sec:code-injection,sec:code-reuse} we present the two basic types of stack buffer overflow attacks, \crtlnameref{sec:code-injection} and \crtlnameref{sec:code-reuse}.
-As their basic approaches are easily mitigated by different defense mechanisms presented in \cref{chp:current-defense-mechanisms}, the successive sections then present additional attack techniques and several possibilities on how to bypass certain security measures.
+As their basic approaches are easily mitigated by different defense mechanisms shown in \cref{chp:current-defense-mechanisms}, the successive sections then present additional attack techniques and several possibilities on how to bypass certain security measures.
 
 \section{Code injection}
 \label{sec:code-injection}
@@ -28,7 +28,7 @@ Shellcode can be created by compiling the desired code or assembling the desired
 The executable binary shellcode can then be extracted from the resulting binary file%
 	\footnote{Public databases like \href{https://www.exploit-db.com/shellcodes}{exploit-db.com} already provide lots of pre-compiled shellcode suitable for different architectures and \glspl{os}.}%
 .
-The name \emph{shellcode} is derived from the general attacker's goal to spawn a shell and thus execute arbitrary commands.
+The name \emph{shellcode} is derived from the general attacker's goal to spawn a shell and execute arbitrary commands.
 However, shellcode can contain any instructions and does not necessarily have to spawn a shell on the attacked system directly.
 
 \subsubsection{Code injection into the vulnerable buffer}
@@ -41,7 +41,7 @@ The processor then tries to decode the data on the stack as processor instructio
 
 Such an attack is very hard to achieve correctly, as the return address written onto the stack has to match the buffer's address exactly.
 An offset of the return address to the buffer's address of a single byte can already render the shellcode unusable, as the instructions are decoded incorrectly by the processor.
-Thus, a common technique to improve the reliability of such an exploit is to include a so-called \emph{\gls{nop} sled} into the user-controlled input which is used to overflow the vulnerable buffer on the stack.
+Therefore, a common technique to improve the reliability of such an exploit is to include a so-called \emph{\gls{nop} sled} into the user-controlled input which is used to overflow the vulnerable buffer on the stack.
 A \gls{nop} sled consists of binary encoded \acs{nop} assembly instructions (byte \texttt{0x90} on \texttt{x86/x86\_64}).
 This instruction tells the processor to do nothing during the cycle where this instruction is executed.
 If a lot of such instructions are placed in front of the shellcode into the buffer, the return address does not necessarily have to point exactly to the start of the buffer or the start of the shellcode but it is sufficient to point the return address to a location somewhere in the \acs{nop} sled.
@@ -71,8 +71,8 @@ This allows to retrieve the location at which an environment variable will be lo
 Thus, it is possible to point the return address into an environment variable instead of the overflown buffer.
 If the return address successfully points either directly to the shellcode or into the \acs{nop} sled inside the environment variable, the shellcode is executed exactly as in the previous case where it was put into the user-controlled overflown buffer.
 
-A restriction of this approach is that environment variables are only mapped into the processes address space when the process is started.
-Thus, shellcode cannot be injected into already running programs with the help of environment variables but only into programs started after setting the environment variable.
+A restriction applying to this approach is that environment variables are only mapped into the processes address space when the process is started.
+For this reason, shellcode cannot be injected into already running programs with the help of environment variables but only into programs started after setting the environment variable.
 
 \subsubsection{Code injection into global variables}
 \label{subsubsec:ci-via-globals}
@@ -108,7 +108,7 @@ However, as already mentioned \hyperref[subsubsec:ci-via-globals]{above}, it can
 \subsection{Difficulties and countermeasures}
 \label{subsec:ci-countermeasures}
 
-Over the last 24 years since \citeauthor{AlephOne1996}'s article \citetitle{AlephOne1996} was published, several changes in processor architecture, such as the transition from 32 bit \texttt{x86} to 64 bit \texttt{x86\_64}, as well as lots of newly introduced mitigation techniques made it difficult or even impossible to inject code into a program's address space and execute such code.
+Over the last 24 years since \citeauthor{AlephOne1996}'s article \citetitle{AlephOne1996} was published, several changes in processor architecture, such as the transition from 32 bit \texttt{x86} to 64 bit \texttt{x86\_64}, as well as lots of newly introduced mitigation techniques have made it difficult or even impossible to inject code into a program's address space and execute such code.
 On the one hand, the following measures can prevent arbitrary code execution through code injection.
 On the other hand, they usually cannot prevent a \gls{dos} attack against the targeted process.
 Even if it is not possible to inject code into the process's address space, a stack buffer overflow might enable an attacker to either crash the program by provoking a \gls{segfault} (cf. for example \hyperref[subsubsec:ci-data-execution-prevention]{\acl{dep}}) or shut down the process by making it detect the stack buffer overflow and exit as a reaction to the overflow (cf. for example \hyperref[subsubsec:ci-fortify-source]{\texttt{\_FORTIFY\_SOURCE}}, \hyperref[subsubsec:ci-stack-canaries]{stack canaries}).
@@ -134,8 +134,8 @@ In an example as in \cref{lst:local-global-buffer}, this problem does not occur 
 \subsubsection{The \texttt{\_FORTIFY\_SOURCE} macro}
 \label{subsubsec:ci-fortify-source}
 
-As described in \cref{subsec:fortify-source}, the size checks conducted by setting the \texttt{\_FORTIFY\linebreak[0]\_SOURCE} value to a value higher than 0 are only activated if the value is set manually or compiler optimizations are enabled by corresponding compiler flags.
-Thus, this is not a default defense measure.
+As described in \cref{subsec:fortify-source}, the size checks conducted by setting the \texttt{\_FORTIFY\linebreak[0]\_SOURCE} value to a value higher than 0 are only activated compiler optimizations are enabled by corresponding compiler flags.
+Therefore, this is not a default defense measure.
 However, when activated, the size checks at compile time and runtime can in many cases successfully prevent stack buffer overflows and thus render a stack buffer overflow vulnerability basically unusable for code injection, as the program exits before the actual overflow even occurs.
 
 \subsubsection{\glsentrylong{dep} (\glsentryshort{dep})}
@@ -144,7 +144,7 @@ However, when activated, the size checks at compile time and runtime can in many
 Seeing that the \gls{nx} bit is used by the Linux kernel by default (cf. \cref{sec:executable-space-protection}), \gls{dep} features prevent stack contents from being executable by default.
 For the stack being marked as executable, the \texttt{-z execstack} command line parameter has to be passed to \gls{gcc} explicitly.
 
-Thus, it is not possible to make use of code injection into a process's address space on modern \glspl{os} by default, as the injected code is located on memory pages marked as non-executable and trying to execute code from such pages just yields a \gls{segfault}.
+Therefore, it is not possible to make use of code injection into a process's address space on modern \glspl{os} by default, as the injected code is located on memory pages marked as non-executable and trying to execute code from such pages just yields a \gls{segfault}.
 This not only includes a function's local stack memory but also the memory areas where environment variables are located as well as memory regions used for storing global variables.
 
 \subsubsection{\glsentrylong{aslr} (\glsentryshort{aslr})}
@@ -164,14 +164,14 @@ Nevertheless, the combination of \gls{dep} and \gls{aslr} in general provides a 
 \label{subsubsec:ci-stack-canaries}
 
 As the \gls{gcc} C compiler automatically emits code for protecting control flow information with stack canaries (cf. \cref{sec:stack-canaries}), the \gls{sfp} and \gls{rip} on the stack are protected by this security measure.
-Thus, if an adversary tries to overwrite code pointers not located in the function-local data where the overflown buffer also is located, the attack fails if the stack canary value is unknown to the attacker and they thus cannot pass the canary check in a function's epilogue.
+Thus, if an adversary tries to overwrite code pointers not located in the function-local data where the overflown buffer also is located, the attack fails if the stack canary value is unknown to the attacker and they consequently cannot pass the canary check in a function's epilogue.
 
 \section{Code reuse}
 \label{sec:code-reuse}
 
 In \cref{subsec:cr-ret2libc,subsec:cr-rop,subsec:cr-jop,subsec:cr-cop,subsec:cr-srop} we first present different approaches for code reuse attacks.
 They all have in common that they reuse existing code in memory instead of injecting code into the attacked process's address space.
-Thus, such attacks can't be prevented by marking user-controlled memory pages such as those containing the stack memory as non-executable.
+Therefore, such attacks can't be prevented by marking user-controlled memory pages such as those containing the stack memory as non-executable.
 Nevertheless, approaches on how to mitigate such attacks exist and are described in \cref{subsec:cr-countermeasures}.
 
 \subsection{Return-to-libc (\glsentryshort{ret2libc})}
@@ -195,9 +195,9 @@ The backwards arrangement of address and string bytes is due to the little-endia
 	\label{fig:ret2libc}
 \end{figure}
 
-It is of course also possible to divert control flow to other functions in \gls{glibc} or in the executable.
+It is also possible to divert control flow to other functions in \gls{glibc} or in the executable.
 A common variant of \gls{ret2libc} attacks are \gls{ret2plt} attacks where code pointers are overwritten with \gls{plt} addresses instead of the \gls{glibc} address of the targeted function.
-This eases the attack, as the executable's addresses are already known before runtime and thus the correct addresses in the \gls{plt} section of the executable can be easily determined.
+This eases the attack, as the executable's addresses are already known before runtime and hence the correct addresses in the \gls{plt} section of the executable can be easily determined.
 
 The \gls{ret2libc} approach has a huge downside on 64 bit systems.
 According to the \texttt{x86\_64} \gls{abi}, function arguments are passed in registers instead of on the stack as far as possible \cites[19\psqq]{Lu2018}[17\psqq]{Fog2019}.
@@ -219,7 +219,7 @@ The attacker would then overwrite the code pointer with the address of a \texttt
 This approach prepares the necessary registers (here: \texttt{rdi}) and then calls a function (here: \texttt{system}) with the attacker-controlled parameters.
 
 Gadgets can be chained up by putting several gadget addresses one after the other onto the stack so that the \texttt{ret} instruction of a gadget automatically returns to the next gadget.
-Because of this behavior, arbitrary code execution is possible as long as an attacker can find binary encodings of the necessary assembly instructions in executable memory pages of the process's address space.
+Due to this behavior, arbitrary code execution is possible as long as an attacker can find binary encodings of the necessary assembly instructions in executable memory pages of the process's address space.
 
 \subsection{\glsentrylong{jop} (\glsentryshort{jop})}
 \label{subsec:cr-jop}
@@ -229,7 +229,7 @@ The main difference, however, is that \gls{jop} is not based on gadgets ending i
 Indirect jumps are not based on fixed addresses generated by the compiler and output into the executable binary.
 Instead, their target is dynamically calculated at runtime and taken from the register or memory location specified in the instruction's operand \cite[3-517\psqq]{IntelCorporation2020}.
 
-Because \gls{rop} gadgets have bi-directional control flow (handing the control to the gadget, gadget returning back control based on the stack contents), they are easy to set up and can easily be chained based on the addresses and data put onto the stack by an attacker.
+As \gls{rop} gadgets have bi-directional control flow (handing the control to the gadget, gadget returning back control based on the stack contents), they are easy to set up and can easily be chained based on the addresses and data put onto the stack by an attacker.
 \gls{jop} gadgets on the other side inhibit uni-directional control flow by branching without regard to any following stack contents.
 This behavior implies the necessity that either each gadget somehow loads the address of the next gadget in a register so that the indirect jump at the end of the gadget jumps to the next gadget or that the register's contents are updated between executing two consecutive gadgets.
 
@@ -280,7 +280,7 @@ Therefore, it might be necessary to sometimes insert gadgets which do not contri
 \citeauthor{Checkoway2010} propose an approach based on \emph{trampoline} gadgets instead of dispatcher gadgets.
 Where \citeauthor{Bletsch2011} use a dispatcher gadget to manipulate a dispatch table pointer so that the indirect jump at the end of the gadget continues with the next desired functional gadget, \citeauthor{Checkoway2010} do not just modify the pointer to the next gadget but completely replace it in their trampoline gadget.
 The overall idea is to include such a trampoline gadget in between functional gadgets in order to retrieve the next functional gadget address from the stack and jump to that gadget as shown in \cref{fig:jop-trampoline}.
-The basic approach is thus very similar to the dispatcher gadget approach with the slight difference that the trampoline gadget based approach is relying on the stack contents similar to a \gls{rop} exploit, as it mixes gadget addresses and data on the stack just like a \gls{rop} exploit.
+The basic approach is very similar to the dispatcher gadget approach with the slight difference that the trampoline gadget based approach is relying on the stack contents similar to a \gls{rop} exploit, as it mixes gadget addresses and data on the stack just like a \gls{rop} exploit.
 It thus also uses the stack pointer as a virtual program counter instead of a specified register as it is the case when using dispatcher gadgets.
 \citeauthor{Checkoway2010} because of those similarities refer to their attack as ``return-oriented programming \textit{without using return instructions}'' \cite{Checkoway2010}.
 
@@ -291,10 +291,10 @@ Similar to the \hyperref[subsubsec:cr-jop-dispatcher]{dispatcher gadget approach
 
 A \texttt{call} instruction on \texttt{x86\_64} behaves basically like a \texttt{push rip; jmp} instruction.
 It pushes the current \texttt{rip} register contents which contains the address of the next instruction onto the stack and then branches to the provided target \cite[3-122\psqq]{IntelCorporation2020}.
-Because of this behavior, \citeauthor{Bletsch2011} already state that \texttt{call} instructions can be used for \gls{jop} instead of \texttt{jmp} instructions as long as the exploit doesn't rely on the stack or the side-effect of pushing the return address onto the stack is compensated for by the gadgets \cite{Bletsch2011}.
+Due to this behavior, \citeauthor{Bletsch2011} already state that \texttt{call} instructions can be used for \gls{jop} instead of \texttt{jmp} instructions as long as the exploit doesn't rely on the stack or the side-effect of pushing the return address onto the stack is compensated for by the gadgets \cite{Bletsch2011}.
 
 \citeauthor{Sadeghi2018} further developed this idea into so-called \gls{cop} where only \texttt{call} instructions are used for chaining the gadgets.
-Because of the side effect of pushing data onto the stack, they conclude that classical \gls{jop} exploits using trampoline or dispatcher gadgets do not work with purely \texttt{call}-ending gadgets.
+They conclude that classical \gls{jop} exploits using trampoline or dispatcher gadgets do not work with purely \texttt{call}-ending gadgets because of the side effect of pushing data onto the stack.
 To overcome this problem, they propose \emph{strong trampoline} and \emph{intra stack pivot} gadgets.
 
 Strong trampoline gadgets are very similar to the trampoline gadgets described in \cref{subsubsec:cr-jop-trampoline} with the difference that they not only pop the target gadget address from the stack but ideally also two other values beforehand.
@@ -356,10 +356,10 @@ However, some distinctions have to be made.
 With code injection techniques, \gls{aslr} is a huge hindering, as the stack base address and thus the address of the environment variable or the stack buffer containing shellcode changes with each process instantiation.
 
 For code reuse attacks, \gls{aslr} only poses a problem if the executable is compiled as \gls{pie}.
-If not, the addresses of binary instructions or bytes possibly interpreted as valid instructions inside the executable binary are fixed and thus the virtual memory address at which they are loaded at runtime is already known beforehand.
-Even though the memory base addresses of any linked libraries are still unknown and their contents thus cannot easily be taken into consideration for \gls{rop}, \gls{jop} or \gls{cop} gadgets, the actual executable may provide enough gadgets for successful attacks if it is big enough or if libraries are statically linked into it instead of dynamically loaded at runtime.
+If not, the addresses of binary instructions or bytes possibly interpreted as valid instructions inside the executable binary are fixed and consequently the virtual memory address at which they are loaded at runtime is already known beforehand.
+Even though the memory base addresses of any linked libraries are still unknown and their contents therefore cannot easily be taken into consideration for \gls{rop}, \gls{jop} or \gls{cop} gadgets, the actual executable may provide enough gadgets for successful attacks if it is big enough or if libraries are statically linked into it instead of dynamically loaded at runtime.
 If not looking at gadget-based exploits but simple function calls as described for \gls{ret2libc} or \gls{ret2plt} attacks, the \texttt{.plt} section of the executable and thus the \gls{plt} is also at a fixed position if not compiled as \gls{pie}.
-Thus, \gls{ret2plt} attacks can still be leveraged like without \gls{aslr}.
+As a result, \gls{ret2plt} attacks can still be leveraged like without \gls{aslr}.
 
 If the executable is compiled as \gls{pie}, \gls{aslr} provides the same protection as against code injection attacks, as no gadget addresses can be easily determined.
 
@@ -375,7 +375,7 @@ As they do not insert code into memory pages marked as non-executable but only d
 As mentioned in \cref{sec:relro} concerning the \gls{relro} security measure, \gls{got} entries without protection through \gls{relro} and located right after the user-controlled data sections in memory could be overwritten by an attacker exploiting a buffer overflow vulnerability with a buffer located in said data sections (\texttt{.bss} or \texttt{.data}).
 As this paper is referring specifically to stack based buffer overflows, such attacks are out of scope and will not be analyzed further.
 However, stack buffer overflow vulnerabilities can still allow an adversary to divert control flow by precisely overwriting \gls{got} entries as presented in the rest of this section.
-For this purpose it is assumed that \gls{dep} is enabled and it is thus not possible for an attacker to just put shellcode onto the stack and execute that shellcode.
+For this purpose it is assumed that \gls{dep} is enabled and it is therefore not possible for an attacker to just put shellcode onto the stack and execute that shellcode.
 Additionally, \gls{aslr} and stack canaries are enabled.
 For the former, the restriction applies that the attacked program is not compiled as \gls{pie} and that parts of the process's address space are thus located at predictable addresses.
 
@@ -393,8 +393,8 @@ For example, the C program in \cref{lst:got-hijacking} contains an obvious stack
 It reads up to 16 bytes from \gls{stdin}, whereas the destination buffer is only 8 bytes in size.
 This means that the 8 bytes in memory after the buffer can be overwritten with arbitrary user-controlled data.
 As those 8 bytes contain the pointer \texttt{char *ptr}, an adversary can control the memory destination of the second \texttt{read} function call if they precisely overwrite it with the first call to \texttt{read}.
-Because the executable is compiled as non-\acs{pie}, the addresses of the \gls{plt} and \gls{got} sections are fixed and not subject to memory address randomization through \gls{aslr}.
-Because of the function \texttt{function}, \texttt{system} has an entry in the \gls{plt}.
+Since the executable is compiled as non-\acs{pie}, the addresses of the \gls{plt} and \gls{got} sections are fixed and not subject to memory address randomization through \gls{aslr}.
+Due to the function \texttt{function}, \texttt{system} has an entry in the \gls{plt}.
 Overwriting \texttt{printf}'s \gls{got} entry with the address of \texttt{system}'s \gls{plt} entry during the second call to \texttt{read} causes the program to execute \texttt{system} instead of \texttt{printf} when \texttt{printf} is called the second time.
 The resulting function call is thus \texttt{system("Array ...")} (argument string shortened) which causes the program to execute ``Array'' as a shell command.
 If the attacker can then place an executable such as a shell script with the filename ``Array'' on the target system so that it is reachable by the process, any code contained in that file is executed by the shell (cf. \cite[15\psq]{Mueller2008}).
@@ -409,9 +409,9 @@ Additional problems and problems specific to the \gls{got} hijacking approach ar
 \label{subsubsec:got-aslr}
 
 We already mentioned that the executable should not be compiled as \gls{pie} before describing the \crtlnameref{subsec:got-operating-principle} of a \gls{got} hijacking attack.
-Without this, the location in memory of the \gls{got} is randomized and thus unlikely to find for an adversary without leaking \gls{aslr} information beforehand and thus effectively rendering \gls{aslr} useless.
+Otherwise, the location in memory of the \gls{got} is randomized and thus unlikely to be found by an adversary without leaking \gls{aslr} information beforehand and hence effectively rendering \gls{aslr} useless.
 
-In addition, \gls{aslr} restricts an adversary to the functions used in the attacked executable as they are listed in the \gls{plt} and their \gls{plt} addresses can thus be used as a target address when overwriting a \gls{got} entry.
+In addition, \gls{aslr} restricts an adversary to the functions used in the attacked executable as they are listed in the \gls{plt} and their \gls{plt} addresses can consequently be used as a target address when overwriting a \gls{got} entry.
 Without \gls{aslr} enabled, an adversary could also know any library addresses and thus overwrite \gls{got} entries not with the addresses of \gls{plt} entries but with the addresses of arbitrary library functions.
 This would significantly increase the impact of a stack buffer overflow vulnerability that allows \gls{got} hijacking as the attacker's function arsenal significantly increases in size.
 In such a situation, code reuse attacks such as \gls{rop} attacks would also become feasible and powerful, as libraries usually provide a huge range of functions and gadgets because of their size.
@@ -423,10 +423,10 @@ However, security measures such as stack canaries can still prevent an adversary
 Depending on security related compiler flags, stack alignment and other options, \gls{gcc} may reorder the variables on the stack and a function's variables might not be positioned on the stack as declared in the code.
 This behavior can be overridden by using a C \texttt{struct} as shown in \cref{lst:got-hijacking}.
 
-If the compiler reorders variables so that a vulnerable buffer is at the bottom of the stack frame, pointers that could be overwritten to point into the \gls{got} are located at lower memory addresses and can thus not be manipulated by overflowing said buffer.
+If the compiler reorders variables so that a vulnerable buffer is at the bottom of the stack frame, pointers that could be overwritten to point into the \gls{got} are located at lower memory addresses and can hence not be manipulated by overflowing said buffer.
 \gls{got} hijacking attacks thus do not present a generally exploitable mechanism but heavily depend on the order of variables on the stack.
 For general buffer overflow attacks aiming to overwrite the \gls{sfp} or \gls{rip} when stack canaries are absent or the correct canary value is known to the attacker, the order of variables on the stack is usually not of high importance, as the adversary can include more padding if additional variables are located between the buffer and the target to overflow.
-Such padding of course still depends on whether there are restrictions in overflow size, for example introduced by the parameter giving the number of bytes in a \texttt{read} function call like in \cref{lst:got-hijacking}.
+Such padding still depends on whether there are restrictions in overflow size, for example introduced by the parameter giving the number of bytes in a \texttt{read} function call like in \cref{lst:got-hijacking}.
 
 \subsubsection{\glsentrylong{relro} (\glsentryshort{relro})}
 \label{subsubsec:got-relro}
@@ -452,7 +452,7 @@ Because the addresses of gadgets are also affected by \gls{aslr} just like the s
 The \emph{ret2ret} approach is based on exploiting pointers located at higher addresses on the stack and thus further down in the stack.
 The idea is to place shellcode into the vulnerable buffer before reaching the return address to overwrite and to overflow the current function's return address and any stack space between the return address and such a pointer with the address of a gadget that is only composed of a \texttt{ret} instruction.
 When the overflow occurs because of a string-based function such as \texttt{strcat} or \texttt{strcpy}, the function always appends a string-terminating \texttt{0x00} byte at the end of the string.
-Thus, if the addresses are correctly aligned to the stack and end right before the desired pointer, the latter's least significant byte (little endian on \texttt{x86(\_64)}) is overwritten with such a \texttt{0x00} byte.
+Therefore, if the addresses are correctly aligned to the stack and end right before the desired pointer, the latter's least significant byte (little endian on \texttt{x86(\_64)}) is overwritten with such a \texttt{0x00} byte.
 As the stack grows towards lower memory addresses, the pointer then points to a position higher on the stack if the least significant byte wasn't already \texttt{0x00} before overwriting it.
 With the correct offset of the buffer containing the shellcode to such a pointer, the pointer might now point into the shellcode buffer which ideally has a \acs{nop} sled allowing for higher success probabilities.
 An exemplary stack layout for such an attack is shown in \cref{fig:ret2ret}.
@@ -486,11 +486,11 @@ Finding such pointers in most cases is not too hard.
 On \texttt{x86}, pointers to buffers as arguments to functions are passed on the stack \cites[11\psq]{Lu2015}[17\psqq]{Fog2019}.
 Thus, if a buffer containing shellcode at the end of a function was passed to that function as a parameter, its address is located on the stack and can be used as such a perfect pointer.
 This method is not likely to work on \texttt{x86\_64}, as parameters are usually passed in registers \cites[19\psqq]{Lu2018}[17\psqq]{Fog2019}.
-However, command line arguments to the program are located at high addresses and thus near the bottom of the stack independently from the architecture \cites[18\psqq]{Lu2015}[31\psqq]{Lu2018}.
+However, command line arguments to the program are located at high addresses and therefore near the bottom of the stack independently from the architecture \cites[18\psqq]{Lu2015}[31\psqq]{Lu2018}.
 Thus, if an adversary can pass the desired shellcode as an argument to the process on startup and overwrite the stack up until to the arguments, they can return to the shellcode and achieve arbitrary code execution.
 
-\Citeauthor{Kotler2005} and \citeauthor{Mueller2008} both describe the ret2pop approach based on the \texttt{x86} calling convention and thus reuse function arguments \cites{Kotler2005}[11\psq]{Mueller2008}.
-As described above, this approach might not work on \texttt{x86\_64} and thus might have to be adapted to use other pointers such as \texttt{argv} argument pointers.
+\Citeauthor{Kotler2005} and \citeauthor{Mueller2008} both describe the ret2pop approach based on the \texttt{x86} calling convention and reuse function arguments \cites{Kotler2005}[11\psq]{Mueller2008}.
+As described above, this approach might not work on \texttt{x86\_64} and therefore might have to be adapted to use other pointers such as \texttt{argv} argument pointers.
 
 \subsection{ret2rax}
 \label{subsec:aici-ret2rax}
@@ -503,7 +503,7 @@ Those pointers are returned in the \texttt{rax} register \cites[24\psq]{Lu2018}[
 If a function without return value or return type \texttt{void} returns, it doesn't set a specific return value in \texttt{rax}.
 Thus, if the last operation to modify the \texttt{rax} register was an operation putting the shellcode buffer's address into \texttt{rax} such as the memory copying functions mentioned above like in the example in \cref{lst:ret2rax}, diverting control flow so that execution continues at the location stored in \texttt{rax} results in arbitrary code execution of the injected shellcode.
 For such an attack to work, an attacker has to overwrite the \gls{rip} of a function where such a stack buffer overflow occurs with the address of a \texttt{jmp rax} or a similar instruction having the same effect like \texttt{call rax} as shown exemplarily in \cref{fig:ret2rax}.
-When the function then returns, the program jumps to the address saved in \texttt{rax} and thus continues execution with running the attacker-controlled shellcode.
+When the function then returns, the program jumps to the address saved in \texttt{rax} and consequently continues execution with running the attacker-controlled shellcode.
 
 \begin{lstlisting}[language=C,float=ht,caption={C function with stack buffer overflow vulnerability prone to ret2rax attacks}, label={lst:ret2rax}]
 void function(char *s) {
@@ -547,7 +547,7 @@ An example how stack layout could look like when conducting such an attack is sh
 In general, the same problems arise as in \cref{subsec:ci-countermeasures} for \crtlnameref{sec:code-injection}.
 However, unknown stack addresses due to \gls{aslr} are not a problem anymore.
 The stack juggling methods only rely on gadget addresses.
-Thus, if \gls{aslr} is enabled but the program under attack is not compiled as \gls{pie}, \crtlnameref{sec:address-invariant-code-injection} methods can present a serious alternative to classical code injection attacks when stack addresses are randomized and pure \crtlnameref{sec:code-reuse} attacks are not powerful enough due to library address randomization and the executable not containing enough gadgets or functions in the \gls{plt}.
+Hence, if \gls{aslr} is enabled but the program under attack is not compiled as \gls{pie}, \crtlnameref{sec:address-invariant-code-injection} methods can present a serious alternative to classical code injection attacks when stack addresses are randomized and pure \crtlnameref{sec:code-reuse} attacks are not powerful enough due to library address randomization and the executable not containing enough gadgets or functions in the \gls{plt}.
 
 \subsubsection{64 bit addressing}
 \label{subsubsec:aici-64bit-addressing}
@@ -576,12 +576,12 @@ In \cref{subsec:bf-information-leaking}, we show that in some specific cases ran
 
 As \citeauthor{MarcoGisbert2016} show in their publication \citetitle{MarcoGisbert2016}, entropy for \gls{aslr} is very low in 32 bit \texttt{x86} Linux systems \cite[4\psqq]{MarcoGisbert2016}.
 This is caused by several reasons.
-Firstly, withozt sub-page randomization, only the memory pages' base addresses are randomized but the contents of a page are always located at the same offset inside the page.
+Firstly, without sub-page randomization, only the memory pages' base addresses are randomized but the contents of a page are always located at the same offset inside the page.
 The default page size of $ 4 \text{\space KiB} = 4096 \text{\space bytes} $ thus already reduces the number of bits available for randomization by 12 ($ 4096 = 2^{12} $) \cite[8\psqq]{MarcoGisbert2016}.
 Secondly, non-uniform distribution of the addresses further reduces entropy, as some addresses are more likely to appear than others after \gls{aslr} is applied \cite[4\psqq]{MarcoGisbert2016}.
 In general, \citeauthor{MarcoGisbert2016} conclude from their findings that \gls{aslr}'s protection on 32 bit systems is questionable \cite[15]{MarcoGisbert2016}.
 
-\Citeauthor{Mueller2008} comes to the same conclusion and even provides example code which injects shellcode with a \acs{nop} sled into a buffer and starts the vulnerable program over and over again until the overflown return address points into the \acs{nop} sled, \gls{aslr} is thus successfully bypassed and the shellcode is executed \cite[3\psq]{Mueller2008}.
+\Citeauthor{Mueller2008} comes to the same conclusion and even provides example code which injects shellcode with a \acs{nop} sled into a buffer and starts the vulnerable program over and over again until the overflown return address points into the \acs{nop} sled, \gls{aslr} is therefore successfully bypassed and the shellcode is executed \cite[3\psq]{Mueller2008}.
 With some smaller adaptations%
 	\footnote{Specifically: changing the base address to which pseudo-random offsets are added from \texttt{0xbf010101} to \texttt{0xff010101}, as 64 bit Linux kernels running 32 bit executables locate the stack at different memory regions than native 32 bit kernels}%
 , this exemplary code still works on current Linux kernels%
@@ -603,7 +603,7 @@ This is in contrast to brute-forcing addresses as described in \cref{subsec:bf-a
 Clone-probing is based on the behavior of parent and child processes when cloning a process by calling \texttt{fork}.
 As the child process inherits a copy of the parent's memory space, the stack contents including canaries as well as the virtual memory addresses are the same in both processes after a \texttt{fork} \cites[230]{Bittau2014}[1\psq]{Lu2016}{Kerrisk2020d}.
 This fact can be exploited on daemons where child processes handle requests or in software where any interaction only occurs with a child process that is restarted by a backend parent process when a crash occurs.
-Because of that behavior, information found during interaction with the software can be reused on subsequent interactions, as the memory layout and contents are still the same.
+Due to that behavior, information found during interaction with the software can be reused on subsequent interactions, as the memory layout and contents are still the same.
 
 If an attacker can determine that such a child process crashed or doesn't behave as expected, for example because the process's response differs from the expected response or is completely omitted, they can determine whether the process behaves normally or whether some abnormal behavior occurred.
 In case of a stack buffer overflow, this can be exploited by overwriting only a single byte of the stack canary per call to the program.
@@ -611,14 +611,14 @@ If the adversary detects that the value for this byte was incorrect because the 
 If on the other hand the process behaves as expected, the attacker knows that the guessed byte was correct.
 Repeating this approach for all 256 values of a byte and all 8 bytes of a stack canary on \texttt{x86\_64} only needs a maximum number of 2048 guesses and thus 1024 guesses on average.
 As the stack canary generated by a random value in \gls{glibc} has the last byte set to \texttt{0x00} \cite[\texttt{sysdeps/generic/dl-osinfo.h}]{FSF2020a}, the first byte to guess (because of little endian representation) is already known.
-The maximum and average number of necessary requests to retrieve the full stack canary thus reduce to 1792 and 896 respectively.
+The maximum and average number of necessary requests to retrieve the full stack canary therefore reduce to 1792 and 896 respectively.
 
 This approach of guessing a stack value byte by byte can be extended to other values than the stack canary as well.
 However, it might be more difficult to detect whether the value was correct or not as the process might not reliably crash or abort if the value was incorrect.
 For example, if overwriting a return address byte in such a way that the modified return address points to a valid instruction, execution might continue at that instruction without problems.
-Of course such a situation doesn't have a high probability of occurring because invalid stack layout and contents such as incorrect stack frame size, unexpected data on the stack, etc. may lead to a program crash during the further execution of the function where execution continues or when that function returns.
+Such a situation doesn't have a high probability of occurring because invalid stack layout and contents such as incorrect stack frame size, unexpected data on the stack, etc. may lead to a program crash during the further execution of the function where execution continues or when that function returns.
 Still, successful execution even in case of an incorrectly overwritten return address cannot be ruled out completely.
-This example of course extends to other values on the stack such as function-local data or the \gls{sfp}.
+This example also extends to other values on the stack such as function-local data or the \gls{sfp}.
 
 Leaking the stack canary value by applying the described approach allows an attacker to overwrite protected values such as the \gls{sfp}, the \gls{rip} or data located in previous stack frames.
 Successfully applying the same approach to the \gls{sfp} and \gls{rip} with the help of a previously leaked stack canary allows an attacker to bypass \gls{aslr} and leverage code reuse attacks such as \gls{rop}.
@@ -629,7 +629,7 @@ Knowing those library base addresses greatly increases the number of functions a
 
 Therefore, \gls{aslr} as well as stack canaries can be effectively bypassed in processes vulnerable to stack buffer overflow attacks which spawn child processes on new requests or on crash.
 In addition, as we're referring to leaking information about the address space in order to determine gadgets' addresses for code reuse attacks, this approach also isn't subject to \gls{dep}.
-Because stack reading also doesn't interfere with the \gls{got}, \gls{relro} also can't provide any protection here.
+Since stack reading also doesn't interfere with the \gls{got}, \gls{relro} also can't provide any protection here.
 
 \subsection{Difficulties and countermeasures}
 \label{subsec:bf-countermeasures}
@@ -638,7 +638,8 @@ As with other types of attacks, some restrictions still apply and attacks follow
 For \crtlnameref{subsec:bf-aslr}, basically the same restrictions apply as for standard \crtlnameref{sec:code-injection} attacks.
 The only difference is that \gls{aslr} might be bypassed by including a big \acs{nop} sled to increase the hit probability and brute-forcing the return address to point into the \acs{nop} sled which may be feasible because of low entropy.
 Theoretically, brute-forcing a stack canary is also possible but not really feasible, as there are $ 2^{56} $ possibilities on \texttt{x86\_64} when the last byte is already fixed as \texttt{0x00}.
-Because of little endian representation, this \texttt{0x00} byte is the first byte in memory to be overwritten. Attacking a stack canary by the same full-word brute-force approach would thus also imply the need for the stack buffer overflow vulnerability lying in a function working on binary data, as string-based functions would already stop at the \texttt{0x00} byte.
+Because of little endian representation, this \texttt{0x00} byte is the first byte in memory to be overwritten.
+Attacking a stack canary by the same full-word brute-force approach would thus also imply the need for the stack buffer overflow vulnerability lying in a function working on binary data, as string-based functions would already stop at the \texttt{0x00} byte.
 
 The need for the vulnerability being exploitable by a function working on binary data such as \texttt{read} or \texttt{memcpy} also arises when looking at attacks based on \crtlnameref{subsec:bf-information-leaking}.
 With string-based functions, such an attack cannot work, as string-based functions append a string-terminating \texttt{0x00} byte to the end of the data inserted by the attacker.

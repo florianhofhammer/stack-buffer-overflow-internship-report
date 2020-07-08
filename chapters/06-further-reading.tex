@@ -7,7 +7,7 @@ This chapter should not be seen as an exhaustive list of environments, exploits 
 \section{System environment}
 \label{sec:system-environment}
 
-During the internship and the research to this paper, focus was lying on stack buffer overflow vulnerabilities on modern Linux systems, the \acl{glibc} and C code compiled with the \acl{gcc} (cf. \cref{sec:system-model}).
+During the internship and the research to this paper, focus was on stack buffer overflow vulnerabilities on modern Linux systems, the \acl{glibc} and C code compiled with the \acl{gcc} (cf. \cref{sec:system-model}).
 
 Firstly, focusing on the Windows \gls{os} instead of Linux, different types of exploits become possible or impossible because of the intrinsic behavior of the \gls{os}.
 As Windows does not include signal handling according to Unix-like behavior or the \gls{posix} standard like Linux does, attacks such as \gls{srop} based on a stack buffer overflow become impossible.
@@ -25,17 +25,17 @@ In general, their behavior should be the same across implementations.
 However, their structure and contents differ which may make it harder to successfully launch portable code reuse exploits which depend on a specific library.
 Such exploits may already fail when a different version of a specific C standard library is installed in the target system, but having different implementations of the C standard library adds another layer of indirection.
 
-Thirdly, the choice of compiler can make a difference in the emitted assembly code and thus also the assembled byte code and functionality.
+Thirdly, the choice of compiler can make a difference in the emitted assembly code and hence also the assembled byte code and functionality.
 For example, \citeauthor{Guelton2020} found in early \citeyear{Guelton2020} that when compiling with the Clang compiler instead of \gls{gcc}, source fortification via the \texttt{\_FORTIFY\_SOURCE} macro may not be effective and the resulting code thus unprotected \cite{Guelton2020}.
-This has been fixed in the meantime \cite{Guelton2020a}, but it still shows that compilers may behave differently and thus some protections depending on the binary output may be more or less effective depending on the compiler.
+This has been fixed in the meantime \cite{Guelton2020a}, but it still shows that compilers may behave differently and that therefore some protections depending on the binary output may be more or less effective depending on the compiler.
 
 Finally, in this paper we focused solely on C code.
 Code compiled from other programming languages may result in different binary output even though the functionality is equivalent.
 In addition, programming languages have different specific properties.
-For example, object-oriented C++ code introduces \glspl{vmt} (also called \emph{vtables}) into the resulting compiler output.
-Those tables contain pointers to methods of an object which may be necessary to dispatch to the correct implementation of a method at runtime, for example when an object's type cannot be determined at compile time because of inheritance.
+For example, object-oriented C\texttt{++} code introduces \glspl{vmt} (also called \emph{vtables}) into the resulting compiler output.
+Those tables contain pointers to methods of an object which may be necessary to dispatch to the correct implementation of a method at runtime, for example when an object's type cannot be determined at compile time due to inheritance.
 When overwriting such pointers or the pointer to a \gls{vmt}, an attacker can control the method call behavior of an object.
-This approach already described in \citeyear{rix2000} \cite{rix2000} shows that a concept introduced by the usage of C++ instead of C may also introduce a new target for stack buffer overflows in addition to classic function pointers in local stack data or the \acrfull{rip}.
+This approach already described in \citeyear{rix2000} \cite{rix2000} shows that a concept introduced by the usage of C\texttt{++} instead of C may also introduce a new target for stack buffer overflows in addition to classic function pointers in local stack data or the \acrfull{rip}.
 
 In conclusion, the restriction to the system model described in \cref{sec:system-model} limits the possibilities for exploits and makes exploits easier because not as many environment properties have to be taken into consideration as with a more generic system model.
 Still, the attacks and defense mechanisms described in this paper are presented as generic as possible.
@@ -43,7 +43,7 @@ Still, the attacks and defense mechanisms described in this paper are presented 
 \section{Heap overflows}
 \label{sec:heap-overflows}
 
-In this paper, focus is lying on overflows of stack buffers.
+In this paper, focus lies on overflows of stack buffers.
 However, the same kind of vulnerability applies to buffers on the heap or global variables.
 In the heap memory region and the \texttt{.bss} and \texttt{.data} sections (cf. \cref{fig:memory-layout}), buffers can also be overflown by for example unbounded \texttt{strcpy} operations or \texttt{memcpy} or \texttt{read} operations with too big size operands specifying the number of bytes to write to the destination buffer.
 Even though there are no directly obvious code pointers such as the \gls{rip} in those memory regions, other code pointers, for example function pointers located in C \texttt{struct}s as part of such a memory structure or also standalone function pointers, can be overflown to divert control flow.
